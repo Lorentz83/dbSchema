@@ -1,0 +1,13 @@
+Download gsp.jar from
+http://www.sqlparser.com/dlaction_redirect.php?downloadurl=http://www.sqlparser.com/dl/gsp_java_trial_1_6_3_1.zip
+
+into lib/ and execute
+
+mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
+    -Dfile=lib/gsp.jar \
+    -DgroupId=com.dpriver \
+    -DartifactId=gsp \
+    -Dversion=1.6.3.1 \
+    -Dpackaging=jar
+
+															     
