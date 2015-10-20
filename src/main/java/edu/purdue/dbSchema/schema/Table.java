@@ -17,11 +17,14 @@ public class Table {
         if (name == null) {
             throw new NullPointerException("name");
         }
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("name");
+        }
         _name = name;
         _cols = new TreeSet<Column>();
     }
 
-    boolean addColumn(Column col) {
+    public boolean addColumn(Column col) {
         if (col == null) {
             throw new NullPointerException("column");
         }

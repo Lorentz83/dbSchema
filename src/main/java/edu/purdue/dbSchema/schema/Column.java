@@ -4,7 +4,7 @@ package edu.purdue.dbSchema.schema;
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
-public class Column {
+public class Column implements Comparable<Column> {
 
     private final String _name;
     private final String _type;
@@ -58,6 +58,14 @@ public class Column {
         hash = 97 * hash + (this._notNull ? 1 : 0);
         hash = 97 * hash + (this._unique ? 1 : 0);
         return hash;
+    }
+
+    @Override
+    public int compareTo(Column o) {
+        if (this.equals(o)) {
+            return 0;
+        }
+        return this._name.compareTo(o._name);
     }
 
     @Override
