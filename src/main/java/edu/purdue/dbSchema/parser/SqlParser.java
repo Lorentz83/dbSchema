@@ -1,6 +1,7 @@
 package edu.purdue.dbSchema.parser;
 
 import edu.purdue.dbSchema.erros.SqlParseException;
+import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnsupportedSqlException;
 import edu.purdue.dbSchema.schema.Column;
 import edu.purdue.dbSchema.schema.Table;
@@ -34,7 +35,7 @@ public class SqlParser {
         _dbVendor = dbVendor;
     }
 
-    public int parse(String sql) throws SqlParseException, UnsupportedSqlException {
+    public int parse(String sql) throws SqlParseException, UnsupportedSqlException, SqlSemanticException {
         TGSqlParser sqlparser = new TGSqlParser(_dbVendor);
         sqlparser.setSqltext(sql);
         if (sqlparser.parse() != 0) {
@@ -51,7 +52,7 @@ public class SqlParser {
         return stmNum;
     }
 
-    protected void analyzeStmt(TCustomSqlStatement stmt) throws UnsupportedSqlException {
+    protected void analyzeStmt(TCustomSqlStatement stmt) throws UnsupportedSqlException, SqlSemanticException {
         switch (stmt.sqlstatementtype) {
 //            case sstupdate:
 //                analyzeUpdateStmt((TUpdateSqlStatement) stmt);
@@ -71,7 +72,7 @@ public class SqlParser {
         }
     }
 
-    protected Table analyzeCreateTableStmt(TCreateTableSqlStatement pStmt) {
+    protected Table analyzeCreateTableStmt(TCreateTableSqlStatement pStmt) throws SqlSemanticException {
         Table tbl = new Table(pStmt.getTargetTable().toString());
         TColumnDefinition column;
         for (int i = 0; i < pStmt.getColumnList().size(); i++) {
@@ -81,7 +82,7 @@ public class SqlParser {
             String colType = column.getDatatype().toString();
             // column.getDefaultExpression().toString()
             boolean isNotNull = false;
-            boolean isUnique = true;
+            boolean isUnique = false;
             if (column.getConstraints() != null) {
                 for (int j = 0; j < column.getConstraints().size(); j++) {
                     TConstraint constraint = column.getConstraints().getConstraint(j);
@@ -90,8 +91,11 @@ public class SqlParser {
                         case notnull:
                             isNotNull = true;
                             break;
-                        case unique:
                         case primary_key:
+                            isNotNull = true;
+                            isUnique = true;
+                            break;
+                        case unique:
                             isUnique = true;
                             break;
                     }

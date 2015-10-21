@@ -1,7 +1,13 @@
 package edu.purdue.dbSchema.schema;
 
+import edu.purdue.dbSchema.erros.SqlSemanticException;
+import java.util.Collection;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -21,44 +27,82 @@ public class TableTest {
         } catch (NullPointerException e) {
         }
         try {
-            tbl = new Table(""); //empty string is valid
+            tbl = new Table("");
             fail("Missing IllegalArgumentException");
         } catch (IllegalArgumentException e) {
         }
     }
 
     @Test
-    public void equalChecksName() {
+    public void equals() throws Exception {
         Table tbl = new Table("name1");
+        tbl.addColumn(new Column("name", "type", true, true));
         Table sameTbl = new Table("name1");
-        Table differentTbl = new Table("anotherName");
+        sameTbl.addColumn(new Column("name", "type", true, true));
+        Table anotherName = new Table("name2");
+        anotherName.addColumn(new Column("name", "type", true, true));
+        Table anotherCols = new Table("name1");
+        anotherCols.addColumn(new Column("name2", "type", true, true));
 
         assertThat(tbl, is(sameTbl));
         assertThat(tbl.hashCode(), is(sameTbl.hashCode()));
 
-        assertThat(tbl, is(not(differentTbl)));
-        assertThat(tbl.hashCode(), is(not(differentTbl.hashCode())));
+        assertThat(tbl, is(not(anotherName)));
+        assertThat(tbl.hashCode(), is(not(anotherName.hashCode())));
+
+        assertThat(tbl, is(not(anotherCols)));
+        //assertThat(tbl.hashCode(), is(not(anotherCols.hashCode())));
     }
 
     @Test
-    public void equalChecksCol() {
-        Table tbl = new Table("tbl");
-        Table sameTbl = new Table("tbl");
-        Table differentTbl = new Table("tbl");
+    public void addColsThroswOnEqualCols() throws SqlSemanticException {
+        Column col = new Column("name1", "type", true, true);
+        Column sameCol = new Column("name1", "anotherType", true, true);
+        Column anotherCol = new Column("name2", "type", true, true);
 
-        Column col1 = new Column("col1", "type1", true, true);
-        Column col2 = new Column("col2", "type2", true, true);
+        Table tbl = new Table("name1");
 
-        tbl.addColumn(col1);
-        tbl.addColumn(col2);
-        sameTbl.addColumn(col1);
-        sameTbl.addColumn(col2);
+        tbl.addColumn(col);
+        try {
+            tbl.addColumn(sameCol);
+            fail("Missing SqlSemanticException on duplicated cols");
+        } catch (SqlSemanticException ex) {
+            assertThat(ex.getMessage(), is("column \"name1\" specified more than once"));
+        }
+        tbl.addColumn(anotherCol);
 
-        differentTbl.addColumn(col2);
-
-        assertThat(tbl, is(sameTbl));
-        assertThat(tbl.hashCode(), is(sameTbl.hashCode()));
-
-        assertThat(tbl, is(not(differentTbl)));
+        Collection<Column> cols = tbl.getColumns();
+        assertThat(cols, hasSize(2));
+        assertThat(cols, contains(col, anotherCol));
+        assertThat(cols, not(hasItem(sameCol)));
     }
+
+    @Test
+    public void addColsReturnsThis() throws SqlSemanticException {
+        Column col = new Column("name2", "type", true, true);
+        Table tbl = new Table("name1");
+
+        Table newTbl = tbl.addColumn(col);
+        assertThat(newTbl, sameInstance(tbl));
+    }
+
+    @Test
+    public void getColumnsReturnsUnmodifiableCollection() throws SqlSemanticException {
+        Column col = new Column("name2", "type", true, true);
+        Table tbl = new Table("name1");
+        tbl.addColumn(col);
+
+        Collection<Column> cols = tbl.getColumns();
+        try {
+            cols.clear();
+            fail("Collection is not unmodifiable");
+        } catch (UnsupportedOperationException ex) {
+        }
+        try {
+            cols.add(col);
+            fail("Collection is not unmodifiable");
+        } catch (UnsupportedOperationException ex) {
+        }
+    }
+
 }

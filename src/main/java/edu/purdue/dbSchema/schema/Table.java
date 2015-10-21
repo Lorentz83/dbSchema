@@ -1,8 +1,10 @@
 package edu.purdue.dbSchema.schema;
 
+import edu.purdue.dbSchema.erros.SqlSemanticException;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
@@ -11,7 +13,7 @@ import java.util.TreeSet;
 public class Table {
 
     private final String _name;
-    private final Set<Column> _cols;
+    private final Map<String, Column> _cols;
 
     public Table(String name) {
         if (name == null) {
@@ -21,54 +23,48 @@ public class Table {
             throw new IllegalArgumentException("name");
         }
         _name = name;
-        _cols = new TreeSet<Column>();
+        _cols = new TreeMap<String, Column>();
     }
 
-    public boolean addColumn(Column col) {
+    public Table addColumn(Column col) throws SqlSemanticException {
         if (col == null) {
             throw new NullPointerException("column");
         }
-        return _cols.add(col);
+        if (_cols.containsKey(col.getName())) {
+            throw new SqlSemanticException(String.format("column \"%s\" specified more than once", col.getName()));
+        }
+        _cols.put(col.getName(), col);
+        return this;
     }
 
     public String getName() {
         return _name;
     }
 
-    public Set<Column> getColumns() {
-        return Collections.unmodifiableSet(_cols);
+    public Collection<Column> getColumns() {
+        return Collections.unmodifiableCollection(_cols.values());
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 43 * hash + (this._name != null ? this._name.hashCode() : 0);
-        return hash;
+        return _name.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Table other = (Table) obj;
-        if ((this._name == null) ? (other._name != null) : !this._name.equals(other._name)) {
-            return false;
-        }
-        if (this._cols != other._cols && (this._cols == null || !this._cols.equals(other._cols))) {
-            return false;
-        }
-        return true;
+        Table other = (Table) obj;
+        return _name.equals(other._name)
+                && _cols.equals(other._cols);
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE TABLE ").append(_name).append(" (\n");
-        for (Column col : _cols) {
+        for (Column col : _cols.values()) {
             sb.append(col.toString()).append(",\n");
         }
         sb.append(");");
