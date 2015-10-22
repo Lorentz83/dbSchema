@@ -2,19 +2,18 @@ package edu.purdue.dbSchema.parser;
 
 import edu.purdue.dbSchema.schema.Column;
 import edu.purdue.dbSchema.schema.Table;
+import edu.purdue.dbSchema.util.TuneLogger;
 import gudusoft.gsqlparser.EDbVendor;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -22,6 +21,11 @@ import org.junit.Test;
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
 public class SqlParserTest {
+
+    @BeforeClass
+    public static void tuneLogger() throws IOException {
+        TuneLogger.init();
+    }
 
     @Test
     public void createTable() throws Exception {
@@ -47,14 +51,6 @@ public class SqlParserTest {
     }
 
     @Test
-    public void selectStatement() throws Exception {
-        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
-        p.parse("select * , tblA.col1 from tbl1 tb1, tbl2 as tblA where a = 'hello' ");
-        fail("TODO");
-
-    }
-
-    @Test
     public void createMultipleTable() throws Exception {
         List<Table> tables;
         List<Table> expectedTables = new ArrayList<Table>();
@@ -75,20 +71,26 @@ public class SqlParserTest {
     @Test
     public void parseSelect() throws Exception {
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
-        p.parse("SELECT * from tbl1, tbl2 WHERE tbl1.a = tbl2.b");
+        p.parse("SELECT * , a.f1 from tbl1, tbl2 as t2 join tbl3 on a=b WHERE tbl1.a = tbl2.b ;"
+                + "select * , tblA.col1 as c1 from tbl1 tb1, tbl2 as tblA where a = 'hello'");
 
-        List<DmlQuery> queries = p.getDmlQueries();
+        List<ParsedQuery> queries = p.getDmlQueries();
+        ParsedQuery query;
+
         assertThat(p.getTables(), hasSize(0));
-        assertThat(queries, hasSize(1));
-        DmlQuery query = queries.get(0);
-        assertThat(query.getType(), is(DmlQuery.Type.SELECT));
+        assertThat(queries, hasSize(2));
 
-        assertThat(query.getChanged(), anEmptyMap());
-        assertThat(query.getFiltered(), hasEntry(equalTo("tbl1"), contains("a")));
-        assertThat(query.getFiltered(), hasEntry(equalTo("tbl2"), contains("b")));
+        query = queries.get(0);
+        assertThat(query.type, is(DlmQueryType.SELECT));
+        assertThat(query.where, is(2));
+        assertThat(query.select, contains(new StringPair("", "*"), new StringPair("a", "f1")));
+        assertThat(query.from, contains(new StringPair("tbl1", ""), new StringPair("tbl2", "t2"), new StringPair("tbl3", "")));
 
-        assertThat(query.getSelected(), hasEntry(equalTo("tbl1"), contains("*")));
-        assertThat(query.getSelected(), hasEntry(equalTo("tbl2"), contains("*")));
+        query = queries.get(1);
+        assertThat(query.type, is(DlmQueryType.SELECT));
+        assertThat(query.where, is(1));
+        assertThat(query.select, contains(new StringPair("", "*"), new StringPair("tblA", "col1")));
+        assertThat(query.from, contains(new StringPair("tbl1", "tb1"), new StringPair("tbl2", "tblA")));
 
     }
 

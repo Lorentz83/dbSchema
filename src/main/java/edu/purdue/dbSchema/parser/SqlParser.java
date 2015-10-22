@@ -35,13 +35,13 @@ public class SqlParser {
     private final static Logger LOGGER = Logger.getLogger(SqlParser.class.getName());
     private final EDbVendor _dbVendor;
     private List<Table> _tables;
-    private List<DmlQuery> _queries;
+    private List<ParsedQuery> _queries;
 
     public List<Table> getTables() {
         return _tables;
     }
 
-    public List<DmlQuery> getDmlQueries() {
+    public List<ParsedQuery> getDmlQueries() {
         return _queries;
     }
 
@@ -60,7 +60,7 @@ public class SqlParser {
         }
 
         _tables = new ArrayList<Table>();
-        _queries = new ArrayList<DmlQuery>();
+        _queries = new ArrayList<ParsedQuery>();
 
         int stmNum = sqlparser.sqlstatements.size();
         for (int i = 0; i < stmNum; i++) {
@@ -73,7 +73,8 @@ public class SqlParser {
     protected void analyzeStmt(TCustomSqlStatement stmt) throws UnsupportedSqlException, SqlSemanticException {
         switch (stmt.sqlstatementtype) {
             case sstselect:
-                analyzeSelectStmt((TSelectSqlStatement) stmt);
+                ParsedQuery q = analyzeSelectStmt((TSelectSqlStatement) stmt);
+                _queries.add(q);
                 break;
 //            case sstupdate:
 //                analyzeUpdateStmt((TUpdateSqlStatement) stmt);
@@ -127,9 +128,9 @@ public class SqlParser {
         return tbl;
     }
 
-    protected QueryInfo analyzeSelectStmt(TSelectSqlStatement pStmt) throws UnsupportedSqlException {
+    protected ParsedQuery analyzeSelectStmt(TSelectSqlStatement pStmt) throws UnsupportedSqlException {
         LOGGER.log(Level.INFO, "select");
-        QueryInfo query = new QueryInfo();
+        ParsedQuery query = new ParsedQuery(DlmQueryType.SELECT);
         if (pStmt.isCombinedQuery()) {
             throw new UnsupportedSqlException("cobined queries are not supported yet");
 //            // pStmt.getSetOperator() to know type of combined query (i.e. union, intersect...)
@@ -169,7 +170,11 @@ public class SqlParser {
                         for (int j = 0; j < join.getJoinItems().size(); j++) {
                             TJoinItem joinItem = join.getJoinItems().getJoinItem(j);
                             System.out.printf("Join type: %s\n", joinItem.getJoinType().toString());
-                            System.out.printf("table: %s, alias: %s\n", joinItem.getTable().toString(), (joinItem.getTable().getAliasClause() != null) ? joinItem.getTable().getAliasClause().toString() : "");
+                            tableAlias = (joinItem.getTable().getAliasClause() != null) ? joinItem.getTable().getAliasClause().toString() : "";
+                            tableName = joinItem.getTable().toString();
+                            query.addFrom(tableName, tableAlias);
+                            System.out.printf("table: %s, alias: %s\n", tableName, tableAlias);
+
                             if (joinItem.getOnCondition() != null) {
                                 System.out.printf("On: %s\n", joinItem.getOnCondition().toString());
                                 query.addWhere();
@@ -403,7 +408,7 @@ public class SqlParser {
      }
 
      */
-    private void countWhereConditions(TExpression conds, QueryInfo query) throws UnsupportedSqlException {
+    private void countWhereConditions(TExpression conds, ParsedQuery query) throws UnsupportedSqlException {
         EExpressionType expressionType = conds.getExpressionType();
         switch (expressionType) {
             case subquery_t:
