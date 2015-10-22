@@ -6,21 +6,33 @@ import edu.purdue.dbSchema.erros.UnsupportedSqlException;
 import edu.purdue.dbSchema.schema.Column;
 import edu.purdue.dbSchema.schema.Table;
 import gudusoft.gsqlparser.EDbVendor;
+import gudusoft.gsqlparser.EExpressionType;
+import gudusoft.gsqlparser.TBaseType;
 import gudusoft.gsqlparser.TCustomSqlStatement;
 import gudusoft.gsqlparser.TGSqlParser;
 import gudusoft.gsqlparser.nodes.TColumnDefinition;
 import gudusoft.gsqlparser.nodes.TConstraint;
+import gudusoft.gsqlparser.nodes.TExpression;
+import gudusoft.gsqlparser.nodes.TJoin;
+import gudusoft.gsqlparser.nodes.TJoinItem;
+import gudusoft.gsqlparser.nodes.TObjectName;
+import gudusoft.gsqlparser.nodes.TResultColumn;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
+import gudusoft.gsqlparser.stmt.TSelectSqlStatement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * http://www.dpriver.com/blog/list-of-demos-illustrate-how-to-use-general-sql-parser/analyzing-ddl-statement/
+ * http://www.dpriver.com/blog/list-of-demos-illustrate-how-to-use-general-sql-parser/decoding-sql-grammar-select-statement/
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
 public class SqlParser {
 
+    private final static Logger LOGGER = Logger.getLogger(SqlParser.class.getName());
     private final EDbVendor _dbVendor;
     private List<Table> _tables;
     private List<DmlQuery> _queries;
@@ -60,6 +72,9 @@ public class SqlParser {
 
     protected void analyzeStmt(TCustomSqlStatement stmt) throws UnsupportedSqlException, SqlSemanticException {
         switch (stmt.sqlstatementtype) {
+            case sstselect:
+                analyzeSelectStmt((TSelectSqlStatement) stmt);
+                break;
 //            case sstupdate:
 //                analyzeUpdateStmt((TUpdateSqlStatement) stmt);
 //                break;
@@ -112,80 +127,119 @@ public class SqlParser {
         return tbl;
     }
 
-    protected static void printConstraint(TConstraint constraint, Boolean outline) {
+    protected QueryInfo analyzeSelectStmt(TSelectSqlStatement pStmt) throws UnsupportedSqlException {
+        LOGGER.log(Level.INFO, "select");
+        QueryInfo query = new QueryInfo();
+        if (pStmt.isCombinedQuery()) {
+            throw new UnsupportedSqlException("cobined queries are not supported yet");
+//            // pStmt.getSetOperator() to know type of combined query (i.e. union, intersect...)
+//            analyzeSelectStmt(pStmt.getLeftStmt());
+//            analyzeSelectStmt(pStmt.getRightStmt());
+//            if (pStmt.getOrderbyClause() != null) {
+//                System.out.printf("order by clause %s\n", pStmt.getOrderbyClause().toString());
+//            }
+        } else {
+            //select list
+            for (int i = 0; i < pStmt.getResultColumnList().size(); i++) {
+                TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
+                TObjectName complexName = resultColumn.getExpr().getObjectOperand();
+                String colName = complexName.getColumnNameOnly();
+                String tblName = complexName.getTableString();
+                query.addSelect(tblName, colName);
+            }
 
-        if (constraint.getConstraintName() != null) {
-            System.out.println("\t\tconstraint name:" + constraint.getConstraintName().toString());
-        }
+            //from clause, check this document for detailed information
+            //http://www.sqlparser.com/sql-parser-query-join-table.php
+            for (int i = 0; i < pStmt.joins.size(); i++) {
+                TJoin join = pStmt.joins.getJoin(i);
+                String tableAlias;
+                String tableName;
+                switch (join.getKind()) {
+                    case TBaseType.join_source_fake:
+                        tableAlias = (join.getTable().getAliasClause() != null) ? join.getTable().getAliasClause().toString() : "";
+                        tableName = join.getTable().toString();
+                        query.addFrom(tableName, tableAlias);
+                        System.out.printf("table: %s, alias: %s\n", tableName, tableAlias);
+                        break;
+                    case TBaseType.join_source_table:
+                        tableAlias = (join.getTable().getAliasClause() != null) ? join.getTable().getAliasClause().toString() : "";
+                        tableName = join.getTable().toString();
+                        query.addFrom(tableName, tableAlias);
+                        System.out.printf("table: %s, alias: %s\n", join.getTable().toString(), (join.getTable().getAliasClause() != null) ? join.getTable().getAliasClause().toString() : "");
+                        for (int j = 0; j < join.getJoinItems().size(); j++) {
+                            TJoinItem joinItem = join.getJoinItems().getJoinItem(j);
+                            System.out.printf("Join type: %s\n", joinItem.getJoinType().toString());
+                            System.out.printf("table: %s, alias: %s\n", joinItem.getTable().toString(), (joinItem.getTable().getAliasClause() != null) ? joinItem.getTable().getAliasClause().toString() : "");
+                            if (joinItem.getOnCondition() != null) {
+                                System.out.printf("On: %s\n", joinItem.getOnCondition().toString());
+                                query.addWhere();
+                            } else if (joinItem.getUsingColumns() != null) {
+                                System.out.printf("using: %s\n", joinItem.getUsingColumns().toString());
+                                query.addWhere();
+                            }
+                        }
+                        break;
+                    case TBaseType.join_source_join:
+                        //select from another query
+                        throw new UnsupportedSqlException("unsuppported neasted query");
+//                        TJoin source_join = join.getJoin();
+//                        System.out.printf("table: %s, alias: %s\n", source_join.getTable().toString(), (source_join.getTable().getAliasClause() != null) ? source_join.getTable().getAliasClause().toString() : "");
+//
+//                        for (int j = 0; j < source_join.getJoinItems().size(); j++) {
+//                            TJoinItem joinItem = source_join.getJoinItems().getJoinItem(j);
+//                            System.out.printf("source_join type: %s\n", joinItem.getJoinType().toString());
+//                            System.out.printf("table: %s, alias: %s\n", joinItem.getTable().toString(), (joinItem.getTable().getAliasClause() != null) ? joinItem.getTable().getAliasClause().toString() : "");
+//                            if (joinItem.getOnCondition() != null) {
+//                                System.out.printf("On: %s\n", joinItem.getOnCondition().toString());
+//                            } else if (joinItem.getUsingColumns() != null) {
+//                                System.out.printf("using: %s\n", joinItem.getUsingColumns().toString());
+//                            }
+//                        }
+//
+//                        for (int j = 0; j < join.getJoinItems().size(); j++) {
+//                            TJoinItem joinItem = join.getJoinItems().getJoinItem(j);
+//                            System.out.printf("Join type: %s\n", joinItem.getJoinType().toString());
+//                            System.out.printf("table: %s, alias: %s\n", joinItem.getTable().toString(), (joinItem.getTable().getAliasClause() != null) ? joinItem.getTable().getAliasClause().toString() : "");
+//                            if (joinItem.getOnCondition() != null) {
+//                                System.out.printf("On: %s\n", joinItem.getOnCondition().toString());
+//                            } else if (joinItem.getUsingColumns() != null) {
+//                                System.out.printf("using: %s\n", joinItem.getUsingColumns().toString());
+//                            }
+//                        }
+//
+//                        break;
+                    default:
+                        throw new UnsupportedSqlException("unknown type in join!");
+                }
+            }
 
-        switch (constraint.getConstraint_type()) {
-            case notnull:
-                System.out.println("\t\tnot null");
-                break;
-            case primary_key:
-                System.out.println("\t\tprimary key");
-                if (outline) {
-                    String lcstr = "";
-                    if (constraint.getColumnList() != null) {
-                        for (int k = 0; k < constraint.getColumnList().size(); k++) {
-                            if (k != 0) {
-                                lcstr = lcstr + ",";
-                            }
-                            lcstr = lcstr + constraint.getColumnList().getObjectName(k).toString();
-                        }
-                        System.out.println("\t\tprimary key columns:" + lcstr);
-                    }
-                }
-                break;
-            case unique:
-                System.out.println("\t\tunique key");
-                if (outline) {
-                    String lcstr = "";
-                    if (constraint.getColumnList() != null) {
-                        for (int k = 0; k < constraint.getColumnList().size(); k++) {
-                            if (k != 0) {
-                                lcstr = lcstr + ",";
-                            }
-                            lcstr = lcstr + constraint.getColumnList().getObjectName(k).toString();
-                        }
-                    }
-                    System.out.println("\t\tcolumns:" + lcstr);
-                }
-                break;
-            case check:
-                System.out.println("\t\tcheck:" + constraint.getCheckCondition().toString());
-                break;
-            case foreign_key:
-            case reference:
-                System.out.println("\t\tforeign key");
-                if (outline) {
-                    String lcstr = "";
-                    if (constraint.getColumnList() != null) {
-                        for (int k = 0; k < constraint.getColumnList().size(); k++) {
-                            if (k != 0) {
-                                lcstr = lcstr + ",";
-                            }
-                            lcstr = lcstr + constraint.getColumnList().getObjectName(k).toString();
-                        }
-                    }
-                    System.out.println("\t\tcolumns:" + lcstr);
-                }
-                System.out.println("\t\treferenced table:" + constraint.getReferencedObject().toString());
-                if (constraint.getReferencedColumnList() != null) {
-                    String lcstr = "";
-                    for (int k = 0; k < constraint.getReferencedColumnList().size(); k++) {
-                        if (k != 0) {
-                            lcstr = lcstr + ",";
-                        }
-                        lcstr = lcstr + constraint.getReferencedColumnList().getObjectName(k).toString();
-                    }
-                    System.out.println("\t\treferenced columns:" + lcstr);
-                }
-                break;
-            default:
-                break;
+            //where clause
+            if (pStmt.getWhereClause() != null) {
+                TExpression conds = pStmt.getWhereClause().getCondition();
+                countWhereConditions(conds, query);
+                System.out.printf("where clause: \n%s\n", pStmt.getWhereClause().toString());
+            }
+
+            // group by pStmt.getGroupByClause()
+            // order by pStmt.getOrderbyClause()
+            // for update
+            if (pStmt.getForUpdateClause() != null) {
+                throw new UnsupportedSqlException("for update: " + pStmt.getForUpdateClause().toString());
+            }
+
+            // top clause
+            if (pStmt.getTopClause() != null) {
+                throw new UnsupportedSqlException("top clause: " + pStmt.getTopClause().toString());
+            }
+
+            // limit clause
+            if (pStmt.getLimitClause() != null) {
+                throw new UnsupportedSqlException("limit clause: " + pStmt.getLimitClause().toString());
+            }
         }
+        return query;
     }
+
     /*
 
 
@@ -349,4 +403,24 @@ public class SqlParser {
      }
 
      */
+    private void countWhereConditions(TExpression conds, QueryInfo query) throws UnsupportedSqlException {
+        EExpressionType expressionType = conds.getExpressionType();
+        switch (expressionType) {
+            case subquery_t:
+                throw new UnsupportedSqlException("unsupported neasted query " + conds.toString());
+            case logical_not_t:
+            case parenthesis_t:
+                countWhereConditions(conds.getLeftOperand(), query);
+                break;
+            case logical_and_t:
+            case logical_or_t:
+            case logical_xor_t:
+                countWhereConditions(conds.getLeftOperand(), query);
+                countWhereConditions(conds.getRightOperand(), query);
+                break;
+            default:
+                LOGGER.log(Level.WARNING, "Unknown condition {0}", expressionType.toString());
+                query.addWhere();
+        }
+    }
 }

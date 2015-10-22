@@ -14,6 +14,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**
@@ -43,6 +44,14 @@ public class SqlParserTest {
         Table actualTable = tables.get(0);
 
         testEquality(actualTable, expectedTable);
+    }
+
+    @Test
+    public void selectStatement() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        p.parse("select * , tblA.col1 from tbl1 tb1, tbl2 as tblA where a = 'hello' ");
+        fail("TODO");
+
     }
 
     @Test
