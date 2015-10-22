@@ -23,9 +23,14 @@ public class SqlParser {
 
     private final EDbVendor _dbVendor;
     private List<Table> _tables;
+    private List<DmlQuery> _queries;
 
     public List<Table> getTables() {
         return _tables;
+    }
+
+    public List<DmlQuery> getDmlQueries() {
+        return _queries;
     }
 
     public SqlParser(EDbVendor dbVendor) {
@@ -43,6 +48,7 @@ public class SqlParser {
         }
 
         _tables = new ArrayList<Table>();
+        _queries = new ArrayList<DmlQuery>();
 
         int stmNum = sqlparser.sqlstatements.size();
         for (int i = 0; i < stmNum; i++) {

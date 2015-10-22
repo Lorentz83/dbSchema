@@ -6,9 +6,13 @@ import gudusoft.gsqlparser.EDbVendor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
@@ -57,6 +61,26 @@ public class SqlParserTest {
         testEquality(tables.get(0), expectedTables.get(0));
         testEquality(tables.get(1), expectedTables.get(1));
         assertThat(tables, is(expectedTables));
+    }
+
+    @Test
+    public void parseSelect() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        p.parse("SELECT * from tbl1, tbl2 WHERE tbl1.a = tbl2.b");
+
+        List<DmlQuery> queries = p.getDmlQueries();
+        assertThat(p.getTables(), hasSize(0));
+        assertThat(queries, hasSize(1));
+        DmlQuery query = queries.get(0);
+        assertThat(query.getType(), is(DmlQuery.Type.SELECT));
+
+        assertThat(query.getChanged(), anEmptyMap());
+        assertThat(query.getFiltered(), hasEntry(equalTo("tbl1"), contains("a")));
+        assertThat(query.getFiltered(), hasEntry(equalTo("tbl2"), contains("b")));
+
+        assertThat(query.getSelected(), hasEntry(equalTo("tbl1"), contains("*")));
+        assertThat(query.getSelected(), hasEntry(equalTo("tbl2"), contains("*")));
+
     }
 
     private void testEquality(Table actualTable, Table expectedTable) {
