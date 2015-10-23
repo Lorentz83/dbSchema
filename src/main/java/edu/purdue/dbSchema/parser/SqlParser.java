@@ -13,6 +13,8 @@ import gudusoft.gsqlparser.TGSqlParser;
 import gudusoft.gsqlparser.nodes.TColumnDefinition;
 import gudusoft.gsqlparser.nodes.TConstraint;
 import gudusoft.gsqlparser.nodes.TExpression;
+import gudusoft.gsqlparser.nodes.TExpressionList;
+import gudusoft.gsqlparser.nodes.TFunctionCall;
 import gudusoft.gsqlparser.nodes.TJoin;
 import gudusoft.gsqlparser.nodes.TJoinItem;
 import gudusoft.gsqlparser.nodes.TObjectName;
@@ -128,6 +130,30 @@ public class SqlParser {
         return tbl;
     }
 
+    private void addWhereExpression(TExpression expression, ParsedQuery query) {
+        if (expression == null) {
+            return;
+        }
+        TObjectName complexName = expression.getObjectOperand();
+        if (complexName != null) { // this is a col name i.e. schema.tbl.col as alias
+            // we currently ignore the schema
+            String colName = complexName.getColumnNameOnly();
+            String tblName = complexName.getTableString();
+            query.addSelect(tblName, colName);
+        } else { // if it is not a col name, go recursively
+            TFunctionCall functionCall = expression.getFunctionCall();
+            if (functionCall != null) { //this is a function call i.e. sum(tbl)
+                TExpressionList args = functionCall.getArgs();
+                for (int j = 0; j < args.size(); j++) {
+                    addWhereExpression(args.getExpression(j), query);
+                }
+            }
+            // in case of unary or binay expressions i.e. -col or col1 + col2
+            addWhereExpression(expression.getLeftOperand(), query);
+            addWhereExpression(expression.getRightOperand(), query);
+        }
+    }
+
     protected ParsedQuery analyzeSelectStmt(TSelectSqlStatement pStmt) throws UnsupportedSqlException {
         LOGGER.log(Level.INFO, "select");
         ParsedQuery query = new ParsedQuery(DlmQueryType.SELECT);
@@ -143,10 +169,7 @@ public class SqlParser {
             //select list
             for (int i = 0; i < pStmt.getResultColumnList().size(); i++) {
                 TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
-                TObjectName complexName = resultColumn.getExpr().getObjectOperand();
-                String colName = complexName.getColumnNameOnly();
-                String tblName = complexName.getTableString();
-                query.addSelect(tblName, colName);
+                addWhereExpression(resultColumn.getExpr(), query);
             }
 
             //from clause, check this document for detailed information

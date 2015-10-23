@@ -69,6 +69,19 @@ public class SqlParserTest {
     }
 
     @Test
+    public void parseFunctionInSelect() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        p.parse("SELECT sum(a), abs(avg(b)), sum(tbl.c, 5), (2 * d) + e as fixed FROM tbl");
+
+        ParsedQuery query = p.getDmlQueries().get(0);
+        assertThat(query.select, contains(new StringPair("", "a"),
+                new StringPair("", "b"),
+                new StringPair("tbl", "c"),
+                new StringPair("", "d"),
+                new StringPair("", "e")));
+    }
+
+    @Test
     public void parseSelect() throws Exception {
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
         p.parse("SELECT * , a.f1 from tbl1, tbl2 as t2 join tbl3 on a=b WHERE tbl1.a = tbl2.b ;"
