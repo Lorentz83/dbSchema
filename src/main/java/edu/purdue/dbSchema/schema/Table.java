@@ -71,4 +71,19 @@ public class Table {
         return sb.toString();
     }
 
+    /**
+     * Gets the column by name.
+     *
+     * @param name the column name.
+     * @return the selected column or null if it does not exists.
+     * @throws NullPointerException if name is null.
+     * @throws IllegalArgumentException if name is empty.
+     */
+    Column getColumn(String name) throws IllegalArgumentException {
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        return _cols.get(name);
+    }
+
 }

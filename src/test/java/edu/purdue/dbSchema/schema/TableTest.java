@@ -5,6 +5,7 @@ import java.util.Collection;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
@@ -105,4 +106,35 @@ public class TableTest {
         }
     }
 
+    @Test
+    public void getColumnNullOnMissing() throws SqlSemanticException {
+        Column col = new Column("name2", "type", true, true);
+        Table tbl = new Table("name1");
+        tbl.addColumn(col);
+
+        Column res;
+        res = tbl.getColumn("name2");
+        assertThat(res, sameInstance(col));
+
+        res = tbl.getColumn("noName");
+        assertThat(res, nullValue());
+    }
+
+    @Test
+    public void getColumnThrowOnInvalidArg() throws SqlSemanticException {
+        Column col = new Column("name2", "type", true, true);
+        Table tbl = new Table("name1");
+        tbl.addColumn(col);
+        try {
+            tbl.getColumn(null);
+            fail("missing NullPointerException");
+        } catch (NullPointerException ex) {
+        }
+        try {
+            tbl.getColumn("");
+            fail("missing IllegalArgumentException");
+        } catch (IllegalArgumentException ex) {
+        }
+
+    }
 }

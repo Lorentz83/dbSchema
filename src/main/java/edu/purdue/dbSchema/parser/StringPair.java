@@ -6,7 +6,7 @@ import java.util.Objects;
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
-class StringPair {
+public class StringPair {
 
     public StringPair(String first, String second) {
         this.first = first;
