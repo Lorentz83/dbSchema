@@ -68,7 +68,7 @@ public class TableTest {
             tbl.addColumn(sameCol);
             fail("Missing SqlSemanticException on duplicated cols");
         } catch (SqlSemanticException ex) {
-            assertThat(ex.getMessage(), is("column \"name1\" specified more than once"));
+            assertThat(ex.getMessage(), is("column 'name1' specified more than once"));
         }
         tbl.addColumn(anotherCol);
 

@@ -27,11 +27,8 @@ public class Table {
     }
 
     public Table addColumn(Column col) throws SqlSemanticException {
-        if (col == null) {
-            throw new NullPointerException("column");
-        }
         if (_cols.containsKey(col.getName())) {
-            throw new SqlSemanticException(String.format("column \"%s\" specified more than once", col.getName()));
+            throw new SqlSemanticException("column '%s' specified more than once", col.getName());
         }
         _cols.put(col.getName(), col);
         return this;

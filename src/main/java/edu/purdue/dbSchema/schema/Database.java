@@ -37,7 +37,7 @@ public class Database {
         int ret = parser.parse(sql);
         for (Table t : parser.getTables()) {
             if (_tables.put(t.getName(), t) != null) {
-                throw new SqlSemanticException("relation '" + t.getName() + "' already exists");
+                throw new SqlSemanticException("relation '%s' already exists", t.getName());
             }
         }
         for (ParsedQuery parsed : parser.getDmlQueries()) {
