@@ -42,10 +42,10 @@ public class DirectedAcyclicGraphTest {
     }
 
     @Test
-    public void getAnchestors(@Mocked final IMapSet<String, String> edges) {
+    public void followNode(@Mocked final IMapSet<String, String> edges) {
         String start = "start";
         DirectedAcyclicGraph<String> dag = new DirectedAcyclicGraph<>(edges);
-        Iterable<String> it = dag.getAncestors(start);
+        Iterable<String> it = dag.followNode(start);
         assertThat(it, instanceOf(DagIterable.class));
         DagIterable<String> actualIt = (DagIterable<String>) it;
         assertThat(actualIt._start, is(start));
@@ -54,10 +54,10 @@ public class DirectedAcyclicGraphTest {
     }
 
     @Test
-    public void getAnchestorsAndSelf(@Mocked final IMapSet<String, String> edges) {
+    public void followNodeAndSelef(@Mocked final IMapSet<String, String> edges) {
         String start = "start";
         DirectedAcyclicGraph<String> dag = new DirectedAcyclicGraph<>(edges);
-        Iterable<String> it = dag.getAncestorsAndSelf(start);
+        Iterable<String> it = dag.followNodeAndSelef(start);
         assertThat(it, instanceOf(DagIterable.class));
         DagIterable<String> actualIt = (DagIterable<String>) it;
         assertThat(actualIt._start, is(start));
@@ -66,16 +66,16 @@ public class DirectedAcyclicGraphTest {
     }
 
     @Test
-    public void getAnchestorsNullPointer(@Mocked final IMapSet<String, String> edges) {
+    public void followNodeNullPointer(@Mocked final IMapSet<String, String> edges) {
         DirectedAcyclicGraph<String> dag = new DirectedAcyclicGraph<>(edges);
         try {
-            dag.getAncestors(null);
+            dag.followNode(null);
             fail("missing null pointer exception");
         } catch (NullPointerException ex) {
 
         }
         try {
-            dag.getAncestorsAndSelf(null);
+            dag.followNodeAndSelef(null);
             fail("missing null pointer exception");
         } catch (NullPointerException ex) {
 
@@ -83,7 +83,7 @@ public class DirectedAcyclicGraphTest {
     }
 
     @Test
-    public void getAnchestors_getAnchestorsAndSelf() {
+    public void followNode_AndSelef() {
         DirectedAcyclicGraph<String> dag = new DirectedAcyclicGraph<>();
         // rol1 -- rolA         /- rolE
         //      `- rolB -- rolC -- rolD
@@ -93,18 +93,18 @@ public class DirectedAcyclicGraphTest {
         dag.add("rolC", "rolE");
         dag.add("rolC", "rolD");
 
-        assertThat(dag.getAncestors("none"), emptyIterable());
-        assertThat(dag.getAncestorsAndSelf("none"), containsInAnyOrder("none"));
+        assertThat(dag.followNode("none"), emptyIterable());
+        assertThat(dag.followNodeAndSelef("none"), containsInAnyOrder("none"));
 
-        assertThat(dag.getAncestors("rolC"), containsInAnyOrder("rolE", "rolD"));
-        assertThat(dag.getAncestorsAndSelf("rolC"), containsInAnyOrder("rolC", "rolE", "rolD"));
+        assertThat(dag.followNode("rolC"), containsInAnyOrder("rolE", "rolD"));
+        assertThat(dag.followNodeAndSelef("rolC"), containsInAnyOrder("rolC", "rolE", "rolD"));
 
         // rol1 -- rolA --------/- rolE
         //      `- rolB -- rolC -- rolD
         dag.add("rolA", "rolE");
 
-        assertThat(dag.getAncestors("rol1"), containsInAnyOrder("rolA", "rolB", "rolC", "rolE", "rolD"));
-        ArrayList<String> ordered = toList(dag.getAncestors("rol1"));
+        assertThat(dag.followNode("rol1"), containsInAnyOrder("rolA", "rolB", "rolC", "rolE", "rolD"));
+        ArrayList<String> ordered = toList(dag.followNode("rol1"));
         assertThat(ordered.indexOf("rolA"), lessThan(ordered.indexOf("rolC")));
         assertThat(ordered.indexOf("rolE"), lessThan(ordered.indexOf("rolD")));
     }
@@ -115,7 +115,7 @@ public class DirectedAcyclicGraphTest {
         assertThat(dag.add("A", "B"), is(true));
         assertThat(dag.add("B", "C"), is(true));
         assertThat(dag.add("C", "A"), is(false));
-        assertThat(dag.getAncestors("A"), contains("B", "C"));
+        assertThat(dag.followNode("A"), contains("B", "C"));
     }
 
     private ArrayList<String> toList(Iterable<String> iterable) {

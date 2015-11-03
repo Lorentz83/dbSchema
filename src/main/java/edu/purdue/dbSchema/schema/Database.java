@@ -9,15 +9,19 @@ import edu.purdue.dbSchema.parser.Grant;
 import edu.purdue.dbSchema.parser.ParsedQuery;
 import edu.purdue.dbSchema.parser.SqlParser;
 import edu.purdue.dbSchema.parser.StringPair;
-import edu.purdue.dbSchema.utils.DirectedAcyclicGraph;
-import edu.purdue.dbSchema.utils.HashMapSet;
+import edu.purdue.dbSchema.utils.DbGrants;
+import edu.purdue.dbSchema.utils.IDbGrants;
 import gudusoft.gsqlparser.EDbVendor;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 
 /**
  *
@@ -26,9 +30,7 @@ import java.util.TreeMap;
 public class Database {
 
     private final Map<String, Table> _tables;
-    private final HashMapSet<Column, String> _grantRead;
-    private final HashMapSet<Column, String> _grantWrite;
-    private final DirectedAcyclicGraph<String> _roleGraph;
+    private final IDbGrants _grants;
 
     private final EDbVendor _dbVendor;
 
@@ -38,13 +40,13 @@ public class Database {
         }
         _dbVendor = dbVendor;
         _tables = new TreeMap<>();
-        _grantRead = new HashMapSet<>();
-        _grantWrite = new HashMapSet<>();
-        _roleGraph = new DirectedAcyclicGraph<>();
+        _grants = new DbGrants();
     }
 
-    public int parse(String sql, String username) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, UnauthorizedSqlException {
+    public Set<String> parse(String sql, String username) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, UnauthorizedSqlException {
         SqlParser parser = new SqlParser(_dbVendor);
+        Set<String> usedRoles = new HashSet<>();
+
         int ret = parser.parse(sql);
         List<ParsedQuery> queries = parser.getDmlQueries();
         if (ret != queries.size()) {
@@ -55,13 +57,9 @@ public class Database {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
             List<Column> cols = evaluateSelect(q);
-            for (Column c : cols) {
-                if (!_grantRead.contains(c, username)) {
-                    throw new UnauthorizedSqlException("the user '%s' has no right to read '%s'", username, c.getName());
-                }
-            }
+            usedRoles.addAll(_grants.enforceRead(username, cols));
         }
-        return ret;
+        return usedRoles;
     }
 
     public int parse(String sql) throws SqlParseException, UnsupportedSqlException, SqlSemanticException {
@@ -193,22 +191,20 @@ public class Database {
         if (g.getType() != Grant.Type.ROLE) {
             throw new IllegalArgumentException("not grant to role");
         }
-        if (!_roleGraph.add(g.getRole(), g.getTo())) {
-            throw new SqlSemanticException("role cycle detected");
-        }
+        _grants.grantRole(g.getRole(), g.getTo());
     }
 
-    protected void evaluateGrant(Grant g) throws UnsupportedSqlException, SqlSemanticException {
-        HashMapSet<Column, String> permission;
+    protected void evaluateGrantToTable(Grant g) throws SqlSemanticException {
+        BiConsumer<Column, String> addGrant;
         switch (g.getType()) {
             case READ:
-                permission = _grantRead;
+                addGrant = (col, role) -> _grants.grantRead(col, role);
                 break;
             case WRITE:
-                permission = _grantWrite;
+                addGrant = (col, role) -> _grants.grantWrite(col, role);
                 break;
             default:
-                throw new UnsupportedSqlException("");
+                throw new IllegalArgumentException("not a grant to table");
         }
 
         Table table = _tables.get(g.getTable());
@@ -217,25 +213,28 @@ public class Database {
         }
 
         final String colName = g.getColumn();
-        if (!colName.isEmpty()) {
+        Collection<Column> colsToGrant;
+        if (colName.isEmpty()) {
+            colsToGrant = table.getColumns();
+        } else {
             Column col = table.getColumn(colName);
             if (col == null) {
                 throw new SqlSemanticException("column '%s' does not exist in table '%s'", colName, g.getTable());
             }
-            permission.put(col, g.getTo());
-        } else {
-            for (Column col : table.getColumns()) {
-                permission.put(col, g.getTo());
-            }
+            colsToGrant = new ArrayList<>();
+            colsToGrant.add(col);
+        }
+        for (Column col : colsToGrant) {
+            addGrant.accept(col, g.getTo());
         }
     }
 
-    protected boolean canRead(String user, Column col) {
-        return _grantRead.contains(col, user);
-    }
-
-    protected boolean canWrite(Column col, String user) {
-        return _grantWrite.contains(col, user);
+    protected void evaluateGrant(Grant g) throws UnsupportedSqlException, SqlSemanticException {
+        if (g.getType() == Grant.Type.ROLE) {
+            evaluateGrantToRole(g);
+        } else {
+            evaluateGrantToTable(g);
+        }
     }
 
 }

@@ -46,7 +46,7 @@ public class HashMapSet<K, V> implements IMapSet<K, V> {
             throw new NullPointerException();
         }
         Set<V> set = _mem.get(key);
-        return set == null ? Collections.EMPTY_SET : Collections.unmodifiableSet(set);
+        return set == null ? Collections.emptySet() : Collections.unmodifiableSet(set);
     }
 
 }

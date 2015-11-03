@@ -72,7 +72,7 @@ public class Table {
      * @throws NullPointerException if name is null.
      * @throws IllegalArgumentException if name is empty.
      */
-    Column getColumn(String name) throws IllegalArgumentException {
+    public Column getColumn(String name) throws IllegalArgumentException {
         if (name.isEmpty()) {
             throw new IllegalArgumentException();
         }

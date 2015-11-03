@@ -4,6 +4,7 @@ package edu.purdue.dbSchema.utils;
  * An object to contain a direct acyclic graph.
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @param <T> the type of the nodes.
  */
 public interface IDirectedAcyclicGraph<T> {
 
@@ -28,7 +29,7 @@ public interface IDirectedAcyclicGraph<T> {
      * @return an iterable with the list of ancestors.
      * @throws NullPointerException if start is null.
      */
-    Iterable<T> getAncestors(T start) throws NullPointerException;
+    Iterable<T> followNode(T start) throws NullPointerException;
 
     /**
      * Get all the ancestors of the selected node, starting with the node
@@ -41,6 +42,6 @@ public interface IDirectedAcyclicGraph<T> {
      * the list of ancestors.
      * @throws NullPointerException if start is null.
      */
-    Iterable<T> getAncestorsAndSelf(T start) throws NullPointerException;
+    Iterable<T> followNodeAndSelef(T start) throws NullPointerException;
 
 }

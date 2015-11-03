@@ -28,7 +28,7 @@ public class DirectedAcyclicGraph<T> implements IDirectedAcyclicGraph<T> {
         if (from == null || to == null) {
             throw new NullPointerException();
         }
-        for (T ancestor : getAncestorsAndSelf(to)) {
+        for (T ancestor : followNodeAndSelef(to)) {
             if (ancestor.equals(from)) {
                 return false;
             }
@@ -38,7 +38,7 @@ public class DirectedAcyclicGraph<T> implements IDirectedAcyclicGraph<T> {
     }
 
     @Override
-    public Iterable<T> getAncestors(T start) throws NullPointerException {
+    public Iterable<T> followNode(T start) throws NullPointerException {
         if (start == null) {
             throw new NullPointerException();
         }
@@ -46,7 +46,7 @@ public class DirectedAcyclicGraph<T> implements IDirectedAcyclicGraph<T> {
     }
 
     @Override
-    public Iterable<T> getAncestorsAndSelf(T start) throws NullPointerException {
+    public Iterable<T> followNodeAndSelef(T start) throws NullPointerException {
         if (start == null) {
             throw new NullPointerException();
         }

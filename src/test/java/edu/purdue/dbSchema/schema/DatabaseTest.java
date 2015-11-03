@@ -227,34 +227,33 @@ public class DatabaseTest {
         assertThat(res, containsInAnyOrder(c1, c2));
     }
 
+//    @Test
+//    public void evaluateGrantDirectGrant() throws Exception {
+//        Column tbl1ID = _testDb.getTable("tbl1").getColumn("id");
+//        Column tbl1f1 = _testDb.getTable("tbl1").getColumn("f1");
+//        Column tbl2ID = _testDb.getTable("tbl2").getColumn("id");
+//
+//        assertThat(_testDb.canRead("usr1", tbl1ID), is(false));
+//        assertThat(_testDb.canRead("usr1", tbl1f1), is(false));
+//        assertThat(_testDb.canRead("usr1", tbl2ID), is(false));
+//
+//        assertThat(_testDb.canRead("usr2", tbl1ID), is(false));
+//        assertThat(_testDb.canRead("usr2", tbl1f1), is(false));
+//        assertThat(_testDb.canRead("usr2", tbl2ID), is(false));
+//
+//        _testDb.evaluateGrant(new Grant(Grant.Type.READ, "usr1", "tbl1", ""));
+//        _testDb.evaluateGrant(new Grant(Grant.Type.READ, "usr2", "tbl2", "id"));
+//
+//        assertThat(_testDb.canRead("usr1", tbl1ID), is(true));
+//        assertThat(_testDb.canRead("usr1", tbl1f1), is(true));
+//        assertThat(_testDb.canRead("usr1", tbl2ID), is(false));
+//
+//        assertThat(_testDb.canRead("usr2", tbl1ID), is(false));
+//        assertThat(_testDb.canRead("usr2", tbl1f1), is(false));
+//        assertThat(_testDb.canRead("usr2", tbl2ID), is(true));
+//    }
     @Test
-    public void evaluateGrantDirectGrant() throws Exception {
-        Column tbl1ID = _testDb.getTable("tbl1").getColumn("id");
-        Column tbl1f1 = _testDb.getTable("tbl1").getColumn("f1");
-        Column tbl2ID = _testDb.getTable("tbl2").getColumn("id");
-
-        assertThat(_testDb.canRead("usr1", tbl1ID), is(false));
-        assertThat(_testDb.canRead("usr1", tbl1f1), is(false));
-        assertThat(_testDb.canRead("usr1", tbl2ID), is(false));
-
-        assertThat(_testDb.canRead("usr2", tbl1ID), is(false));
-        assertThat(_testDb.canRead("usr2", tbl1f1), is(false));
-        assertThat(_testDb.canRead("usr2", tbl2ID), is(false));
-
-        _testDb.evaluateGrant(new Grant(Grant.Type.READ, "usr1", "tbl1", ""));
-        _testDb.evaluateGrant(new Grant(Grant.Type.READ, "usr2", "tbl2", "id"));
-
-        assertThat(_testDb.canRead("usr1", tbl1ID), is(true));
-        assertThat(_testDb.canRead("usr1", tbl1f1), is(true));
-        assertThat(_testDb.canRead("usr1", tbl2ID), is(false));
-
-        assertThat(_testDb.canRead("usr2", tbl1ID), is(false));
-        assertThat(_testDb.canRead("usr2", tbl1f1), is(false));
-        assertThat(_testDb.canRead("usr2", tbl2ID), is(true));
-    }
-
-    @Test
-    public void evaluateGrantCiclicRole() throws Exception {
+    public void evaluateGrantCyclicRole() throws Exception {
         _testDb.evaluateGrant(new Grant("usr1", "usr2"));
 
         try {
@@ -263,6 +262,6 @@ public class DatabaseTest {
         } catch (SqlSemanticException ex) {
 
         }
-
     }
+
 }
