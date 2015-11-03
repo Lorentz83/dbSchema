@@ -28,6 +28,30 @@ public class SqlParserTest {
     }
 
     @Test
+    public void grant() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        p.parse("GRANT roleName TO userName; GRANT SELECT ON tbl.col TO usr");
+        List<Grant> grants = p.getGrants();
+        assertThat(grants, contains(new Grant("roleName", "userName"), new Grant(Grant.Type.READ, "usr", "tbl", "col")));
+    }
+
+    @Test
+    public void grantCaseInsensitive() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        p.parse("gRanT sEleCt on tbl.col tO usr");
+        List<Grant> grants = p.getGrants();
+        assertThat(grants, contains(new Grant(Grant.Type.READ, "usr", "tbl", "col")));
+    }
+
+    @Test
+    public void grantWholeTableNoStar() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        p.parse("GRANT select ON tbl TO usr");
+        List<Grant> grants = p.getGrants();
+        assertThat(grants, contains(new Grant(Grant.Type.READ, "usr", "tbl", "")));
+    }
+
+    @Test
     public void createTable() throws Exception {
         List<Table> tables;
         Table expectedTable = new Table("tbl1");

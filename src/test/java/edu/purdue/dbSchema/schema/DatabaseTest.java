@@ -2,6 +2,7 @@ package edu.purdue.dbSchema.schema;
 
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.parser.DlmQueryType;
+import edu.purdue.dbSchema.parser.Grant;
 import edu.purdue.dbSchema.parser.ParsedQuery;
 import edu.purdue.dbSchema.parser.StringPair;
 import gudusoft.gsqlparser.EDbVendor;
@@ -224,5 +225,31 @@ public class DatabaseTest {
         Column c1 = _testDb.getTable("tbl1").getColumn("id");
         Column c2 = _testDb.getTable("tbl2").getColumn("f2");
         assertThat(res, containsInAnyOrder(c1, c2));
+    }
+
+    @Test
+    public void evaluateGrant() throws Exception {
+        Column tbl1ID = _testDb.getTable("tbl1").getColumn("id");
+        Column tbl1f1 = _testDb.getTable("tbl1").getColumn("f1");
+        Column tbl2ID = _testDb.getTable("tbl2").getColumn("id");
+
+        assertThat(_testDb.canRead("usr1", tbl1ID), is(false));
+        assertThat(_testDb.canRead("usr1", tbl1f1), is(false));
+        assertThat(_testDb.canRead("usr1", tbl2ID), is(false));
+
+        assertThat(_testDb.canRead("usr2", tbl1ID), is(false));
+        assertThat(_testDb.canRead("usr2", tbl1f1), is(false));
+        assertThat(_testDb.canRead("usr2", tbl2ID), is(false));
+
+        _testDb.evaluateGrant(new Grant(Grant.Type.READ, "usr1", "tbl1", ""));
+        _testDb.evaluateGrant(new Grant(Grant.Type.READ, "usr2", "tbl2", "id"));
+
+        assertThat(_testDb.canRead("usr1", tbl1ID), is(true));
+        assertThat(_testDb.canRead("usr1", tbl1f1), is(true));
+        assertThat(_testDb.canRead("usr1", tbl2ID), is(false));
+
+        assertThat(_testDb.canRead("usr2", tbl1ID), is(false));
+        assertThat(_testDb.canRead("usr2", tbl1f1), is(false));
+        assertThat(_testDb.canRead("usr2", tbl2ID), is(true));
     }
 }

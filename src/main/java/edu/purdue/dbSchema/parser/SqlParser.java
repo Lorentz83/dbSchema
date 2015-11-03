@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * http://www.dpriver.com/blog/list-of-demos-illustrate-how-to-use-general-sql-parser/analyzing-ddl-statement/
@@ -38,6 +40,11 @@ public class SqlParser {
     private final EDbVendor _dbVendor;
     private List<Table> _tables;
     private List<ParsedQuery> _queries;
+    private List<Grant> _grants;
+
+    public List<Grant> getGrants() {
+        return _grants;
+    }
 
     public List<Table> getTables() {
         return _tables;
@@ -61,8 +68,9 @@ public class SqlParser {
             throw new SqlParseException(sqlparser.getErrormessage());
         }
 
-        _tables = new ArrayList<Table>();
-        _queries = new ArrayList<ParsedQuery>();
+        _tables = new ArrayList<>();
+        _queries = new ArrayList<>();
+        _grants = new ArrayList<>();
 
         int stmNum = sqlparser.sqlstatements.size();
         for (int i = 0; i < stmNum; i++) {
@@ -72,7 +80,7 @@ public class SqlParser {
         return stmNum;
     }
 
-    protected void analyzeStmt(TCustomSqlStatement stmt) throws UnsupportedSqlException, SqlSemanticException {
+    protected void analyzeStmt(TCustomSqlStatement stmt) throws UnsupportedSqlException, SqlSemanticException, SqlParseException {
         switch (stmt.sqlstatementtype) {
             case sstselect:
                 ParsedQuery q = analyzeSelectStmt((TSelectSqlStatement) stmt);
@@ -91,6 +99,11 @@ public class SqlParser {
 //            case sstcreateview:
 //                analyzeCreateViewStmt((TCreateViewSqlStatement) stmt);
 //                break;
+            case sstGrant:
+            case sstoraclegrant:
+                Grant grant = analyzeGrantStmt(stmt);
+                _grants.add(grant);
+                break;
             default:
                 throw new UnsupportedSqlException(stmt.sqlstatementtype.toString());
         }
@@ -268,169 +281,6 @@ public class SqlParser {
         return query;
     }
 
-    /*
-
-
-
-     protected static void printObjectNameList(TObjectNameList objList) {
-     for (int i = 0; i < objList.size(); i++) {
-     System.out.println(objList.getObjectName(i).toString());
-     }
-
-     }
-
-     protected static void printColumnDefinitionList(TColumnDefinitionList cdl) {
-     for (int i = 0; i < cdl.size(); i++) {
-     System.out.println(cdl.getColumn(i).getColumnName());
-     }
-     }
-
-     protected static void printConstraintList(TConstraintList cnl) {
-     for (int i = 0; i < cnl.size(); i++) {
-     printConstraint(cnl.getConstraint(i), true);
-     }
-     }
-
-     protected static void printAlterTableOption(TAlterTableOption ato) {
-     System.out.println(ato.getOptionType());
-     switch (ato.getOptionType()) {
-     case AddColumn:
-     printColumnDefinitionList(ato.getColumnDefinitionList());
-     break;
-     case ModifyColumn:
-     printColumnDefinitionList(ato.getColumnDefinitionList());
-     break;
-     case AlterColumn:
-     System.out.println(ato.getColumnName().toString());
-     break;
-     case DropColumn:
-     System.out.println(ato.getColumnName().toString());
-     break;
-     case SetUnUsedColumn:  //oracle
-     printObjectNameList(ato.getColumnNameList());
-     break;
-     case DropUnUsedColumn:
-     break;
-     case DropColumnsContinue:
-     break;
-     case RenameColumn:
-     System.out.println("rename " + ato.getColumnName().toString() + " to " + ato.getNewColumnName().toString());
-     break;
-     case ChangeColumn:   //MySQL
-     System.out.println(ato.getColumnName().toString());
-     printColumnDefinitionList(ato.getColumnDefinitionList());
-     break;
-     case RenameTable:   //MySQL
-     System.out.println(ato.getColumnName().toString());
-     break;
-     case AddConstraint:
-     printConstraintList(ato.getConstraintList());
-     break;
-     case AddConstraintIndex:    //MySQL
-     if (ato.getColumnName() != null) {
-     System.out.println(ato.getColumnName().toString());
-     }
-     printObjectNameList(ato.getColumnNameList());
-     break;
-     case AddConstraintPK:
-     case AddConstraintUnique:
-     case AddConstraintFK:
-     if (ato.getConstraintName() != null) {
-     System.out.println(ato.getConstraintName().toString());
-     }
-     printObjectNameList(ato.getColumnNameList());
-     break;
-     case ModifyConstraint:
-     System.out.println(ato.getConstraintName().toString());
-     break;
-     case RenameConstraint:
-     System.out.println("rename " + ato.getConstraintName().toString() + " to " + ato.getNewConstraintName().toString());
-     break;
-     case DropConstraint:
-     System.out.println(ato.getConstraintName().toString());
-     break;
-     case DropConstraintPK:
-     break;
-     case DropConstraintFK:
-     System.out.println(ato.getConstraintName().toString());
-     break;
-     case DropConstraintUnique:
-     if (ato.getConstraintName() != null) { //db2
-     System.out.println(ato.getConstraintName());
-     }
-
-     if (ato.getColumnNameList() != null) {//oracle
-     printObjectNameList(ato.getColumnNameList());
-     }
-     break;
-     case DropConstraintCheck: //db2
-     System.out.println(ato.getConstraintName());
-     break;
-     case DropConstraintPartitioningKey:
-     break;
-     case DropConstraintRestrict:
-     break;
-     case DropConstraintIndex:
-     System.out.println(ato.getConstraintName());
-     break;
-     case DropConstraintKey:
-     System.out.println(ato.getConstraintName());
-     break;
-     case AlterConstraintFK:
-     System.out.println(ato.getConstraintName());
-     break;
-     case AlterConstraintCheck:
-     System.out.println(ato.getConstraintName());
-     break;
-     case CheckConstraint:
-     break;
-     case OraclePhysicalAttrs:
-     case toOracleLogClause:
-     case OracleTableP:
-     case MssqlEnableTrigger:
-     case MySQLTableOptons:
-     case Db2PartitioningKeyDef:
-     case Db2RestrictOnDrop:
-     case Db2Misc:
-     case Unknown:
-     break;
-     }
-
-     }
-
-     protected static void analyzeCreateViewStmt(TCreateViewSqlStatement pStmt) {
-     TCreateViewSqlStatement createView = pStmt;
-     System.out.println("View name:" + createView.getViewName().toString());
-     TViewAliasClause aliasClause = createView.getViewAliasClause();
-     for (int i = 0; i < aliasClause.getViewAliasItemList().size(); i++) {
-     System.out.println("View alias:" + aliasClause.getViewAliasItemList().getViewAliasItem(i).toString());
-     }
-
-     System.out.println("View subquery: \n" + createView.getSubquery().toString());
-     }
-
-     protected static void analyzeUpdateStmt(TUpdateSqlStatement pStmt) {
-     System.out.println("Table Name:" + pStmt.getTargetTable().toString());
-     System.out.println("set clause:");
-     for (int i = 0; i < pStmt.getResultColumnList().size(); i++) {
-     TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
-     TExpression expression = resultColumn.getExpr();
-     System.out.println("\tcolumn:" + expression.getLeftOperand().toString() + "\tvalue:" + expression.getRightOperand().toString());
-     }
-     if (pStmt.getWhereClause() != null) {
-     System.out.println("where clause:\n" + pStmt.getWhereClause().getCondition().toString());
-     }
-     }
-
-     protected static void analyzeAlterTableStmt(TAlterTableStatement pStmt) {
-     System.out.println("Table Name:" + pStmt.getTableName().toString());
-     System.out.println("Alter table options:");
-     for (int i = 0; i < pStmt.getAlterTableOptionList().size(); i++) {
-     printAlterTableOption(pStmt.getAlterTableOptionList().getAlterTableOption(i));
-     }
-     }
-
-     */
     private void countWhereConditions(TExpression conds, ParsedQuery query) throws UnsupportedSqlException {
         EExpressionType expressionType = conds.getExpressionType();
         switch (expressionType) {
@@ -450,5 +300,47 @@ public class SqlParser {
                 LOGGER.log(Level.WARNING, "Unknown condition {0}", expressionType.toString());
                 query.addWhere();
         }
+    }
+
+    private final Pattern _grantRegex = Pattern.compile("GRANT +(?<what>\\w+)( +ON +(?<where>[\\w.]+))? +TO +(?<to>\\w+) *;?", Pattern.CASE_INSENSITIVE);
+
+    private Grant analyzeGrantStmt(TCustomSqlStatement stmt) throws UnsupportedSqlException, SqlParseException {
+        String grantStr = stmt.toString();
+        // GRANT what ON col TO role
+        // GRANT role TO role
+        Matcher matcher = _grantRegex.matcher(grantStr);
+        if (!matcher.matches()) {
+            throw new UnsupportedSqlException("Cannot parse grant statement" + grantStr);
+        }
+        String what = matcher.group("what");
+        String to = matcher.group("to");
+        String where = matcher.group("where");
+        if (where != null) {
+            String[] w = where.split("\\.");
+            String table = w[0];
+            String col = "";
+            if (w.length > 1) {
+                col = w[1];
+            }
+            if (w.length > 2) {
+                throw new SqlParseException("In the grant '%s', the object '%s' is not in the form of 'table.coloumn'", grantStr, where);
+            }
+            Grant.Type type = null;
+            switch (what.toUpperCase()) {
+                case "SELECT":
+                    type = Grant.Type.READ;
+                    break;
+                case "INSERT":
+                case "UPDATE":
+                case "REFERENCES":
+                    type = Grant.Type.READ;
+                    break;
+                default:
+                    throw new SqlParseException("Cannot recognize the privilege '%s' in the grant statement '%s'", what, grantStr);
+
+            }
+            return new Grant(type, to, table, col);
+        }
+        return new Grant(what, to);
     }
 }

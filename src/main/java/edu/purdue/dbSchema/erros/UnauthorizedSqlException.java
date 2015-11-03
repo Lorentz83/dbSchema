@@ -4,13 +4,13 @@ package edu.purdue.dbSchema.erros;
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
-public class SqlParseException extends Exception {
+public class UnauthorizedSqlException extends Exception {
 
-    public SqlParseException(String msg) {
+    public UnauthorizedSqlException(String msg) {
         super(msg);
     }
 
-    public SqlParseException(String format, String... args) {
+    public UnauthorizedSqlException(String format, String... args) {
         super(String.format(format, (Object[]) args));
     }
 }
