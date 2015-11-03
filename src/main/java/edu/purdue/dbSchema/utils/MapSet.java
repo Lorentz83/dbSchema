@@ -1,5 +1,6 @@
 package edu.purdue.dbSchema.utils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,7 +14,7 @@ public class MapSet<K, V> {
 
     private final Map<K, Set<V>> _mem = new HashMap<>();
 
-    public void put(K key, V value) {
+    public boolean put(K key, V value) {
         if (key == null || value == null) {
             throw new NullPointerException();
         }
@@ -22,12 +23,23 @@ public class MapSet<K, V> {
             set = new HashSet<>();
             _mem.put(key, set);
         }
-        set.add(value);
+        return set.add(value);
     }
 
     public boolean contains(K key, V value) {
+        if (key == null || value == null) {
+            throw new NullPointerException();
+        }
         Set<V> set = _mem.get(key);
         return (set == null) ? false : set.contains(value);
+    }
+
+    public Set<V> getSet(K key) {
+        if (key == null) {
+            throw new NullPointerException();
+        }
+        Set<V> set = _mem.get(key);
+        return set == null ? Collections.EMPTY_SET : Collections.unmodifiableSet(set);
     }
 
 }

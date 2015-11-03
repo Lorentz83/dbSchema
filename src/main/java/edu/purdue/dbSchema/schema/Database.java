@@ -9,6 +9,7 @@ import edu.purdue.dbSchema.parser.Grant;
 import edu.purdue.dbSchema.parser.ParsedQuery;
 import edu.purdue.dbSchema.parser.SqlParser;
 import edu.purdue.dbSchema.parser.StringPair;
+import edu.purdue.dbSchema.utils.DirectedAcyclicGraph;
 import edu.purdue.dbSchema.utils.MapSet;
 import gudusoft.gsqlparser.EDbVendor;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ public class Database {
     private final Map<String, Table> _tables;
     private final MapSet<Column, String> _grantRead;
     private final MapSet<Column, String> _grantWrite;
+    private final DirectedAcyclicGraph<String> _roleGraph;
 
     private final EDbVendor _dbVendor;
 
@@ -38,6 +40,7 @@ public class Database {
         _tables = new TreeMap<>();
         _grantRead = new MapSet<>();
         _grantWrite = new MapSet<>();
+        _roleGraph = new DirectedAcyclicGraph<>();
     }
 
     public int parse(String sql, String username) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, UnauthorizedSqlException {
@@ -186,6 +189,15 @@ public class Database {
         return _tables.get(name);
     }
 
+    protected void evaluateGrantToRole(Grant g) throws UnsupportedSqlException, SqlSemanticException {
+        if (g.getType() != Grant.Type.ROLE) {
+            throw new IllegalArgumentException("not grant to role");
+        }
+        if (!_roleGraph.add(g.getRole(), g.getTo())) {
+            throw new SqlSemanticException("role cycle detected");
+        }
+    }
+
     protected void evaluateGrant(Grant g) throws UnsupportedSqlException, SqlSemanticException {
         MapSet<Column, String> permission;
         switch (g.getType()) {
@@ -222,7 +234,7 @@ public class Database {
         return _grantRead.contains(col, user);
     }
 
-    protected boolean writeRead(Column col, String user) {
+    protected boolean canWrite(Column col, String user) {
         return _grantWrite.contains(col, user);
     }
 
