@@ -1,7 +1,6 @@
 package edu.purdue.dbSchema.schema;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -16,37 +15,33 @@ public class ColumnTest {
     public void ctorException() {
         Column col;
         try {
-            col = new Column(null, "asd", false, false);
+            col = new Column(null, "asd", false, false, null);
             fail("Missing NullPointerExceptio");
         } catch (NullPointerException e) {
         }
         try {
-            col = new Column("asd", null, false, false);
+            col = new Column("asd", null, false, false, null);
             fail("Missing NullPointerExceptio");
         } catch (NullPointerException e) {
         }
         try {
-            col = new Column("", "asd", false, false);
+            col = new Column("", "asd", false, false, null);
             fail("Missing IllegalArgumentException");
         } catch (IllegalArgumentException e) {
         }
         try {
-            col = new Column("asd", "", false, false);
+            col = new Column("asd", "", false, false, null);
             fail("Missing IllegalArgumentException");
         } catch (IllegalArgumentException e) {
         }
     }
 
     @Test
-    public void equals() {
-        Column col = new Column("colName", "type", true, true);
-        Column sameCol = new Column("colName", "type", true, true);
-        Column anotherCol = new Column("anotherName", "type", true, true);
+    public void equalsChecksInstances() {
+        Column col = new Column("colName", "type", true, true, null);
+        Column sameCol = new Column("colName", "type", true, true, null);
 
-        assertThat(col, is(sameCol));
-        assertThat(col.hashCode(), is(sameCol.hashCode()));
-
-        assertThat(col, is(not(anotherCol)));
-        assertThat(col.hashCode(), is(not(anotherCol.hashCode())));
+        assertThat(col.equals(sameCol), is(false));
+        assertThat(col.equals(col), is(true));
     }
 }

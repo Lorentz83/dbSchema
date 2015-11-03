@@ -1,14 +1,12 @@
 package edu.purdue.dbSchema.parser;
 
-import edu.purdue.dbSchema.schema.Column;
 import edu.purdue.dbSchema.schema.Table;
-import edu.purdue.dbSchema.util.TuneLogger;
+import edu.purdue.dbSchema.testUtil.SoftEqual;
+import edu.purdue.dbSchema.testUtil.TuneLogger;
 import gudusoft.gsqlparser.EDbVendor;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -55,14 +53,10 @@ public class SqlParserTest {
     public void createTable() throws Exception {
         List<Table> tables;
         Table expectedTable = new Table("tbl1");
-        final Column id = new Column("id", "integer", true, true);
-        final Column name = new Column("name", "varchar(50)", false, true);
-        final Column other = new Column("other", "boolean", true, false);
-        final Column useless = new Column("useless", "boolean", false, false);
-        expectedTable.addColumn(id)
-                .addColumn(name)
-                .addColumn(other)
-                .addColumn(useless);
+        expectedTable.addColumn("id", "integer", true, true);
+        expectedTable.addColumn("name", "varchar(50)", false, true);
+        expectedTable.addColumn("other", "boolean", true, false);
+        expectedTable.addColumn("useless", "boolean", false, false);
 
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
         p.parse("CREATE TABLE tbl1(id integer primary key, name varchar(50) UNIQUE, other boolean NOT NULL, useless boolean)");
@@ -71,25 +65,24 @@ public class SqlParserTest {
         assertThat(tables.size(), is(1));
         Table actualTable = tables.get(0);
 
-        testEquality(actualTable, expectedTable);
+        SoftEqual.table(actualTable, expectedTable);
     }
 
     @Test
     public void createMultipleTable() throws Exception {
         List<Table> tables;
         List<Table> expectedTables = new ArrayList<Table>();
-        Column col = new Column("id", "integer", false, false);
-        expectedTables.add(new Table("tbl1").addColumn(col));
-        expectedTables.add(new Table("tbl2").addColumn(col));
+        expectedTables.add(new Table("tbl1").addColumn("id", "integer", false, false));
+        expectedTables.add(new Table("tbl2").addColumn("id", "integer", false, false));
 
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
         p.parse("CREATE TABLE tbl1(id integer); CREATE TABLE tbl2(id integer)");
 
         tables = p.getTables();
         assertThat(tables.size(), is(2));
-        testEquality(tables.get(0), expectedTables.get(0));
-        testEquality(tables.get(1), expectedTables.get(1));
-        assertThat(tables, is(expectedTables));
+        SoftEqual.tables(tables, expectedTables);
+        SoftEqual.table(tables.get(0), expectedTables.get(0));
+        SoftEqual.table(tables.get(1), expectedTables.get(1));
     }
 
     @Test
@@ -131,15 +124,4 @@ public class SqlParserTest {
 
     }
 
-    private void testEquality(Table actualTable, Table expectedTable) {
-        assertThat(actualTable.getName(), is(expectedTable.getName()));
-        final Collection<Column> expectedCols = expectedTable.getColumns();
-        for (Column col : expectedCols) {
-            assertThat(actualTable.getColumns(), hasItem(col));
-        }
-        assertThat(actualTable.getColumns(), hasSize(expectedCols.size()));
-
-        //only this line is necessary, but a finer check makes the code easier to debug
-        assertThat(actualTable, is(expectedTable));
-    }
 }

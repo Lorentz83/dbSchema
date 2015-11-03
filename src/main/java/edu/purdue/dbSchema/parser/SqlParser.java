@@ -3,7 +3,6 @@ package edu.purdue.dbSchema.parser;
 import edu.purdue.dbSchema.erros.SqlParseException;
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnsupportedSqlException;
-import edu.purdue.dbSchema.schema.Column;
 import edu.purdue.dbSchema.schema.Table;
 import gudusoft.gsqlparser.EDbVendor;
 import gudusoft.gsqlparser.EExpressionType;
@@ -138,7 +137,7 @@ public class SqlParser {
                     }
                 }
             }
-            tbl.addColumn(new Column(colName, colType, isNotNull, isUnique));
+            tbl.addColumn(colName, colType, isNotNull, isUnique);
         }
         return tbl;
     }

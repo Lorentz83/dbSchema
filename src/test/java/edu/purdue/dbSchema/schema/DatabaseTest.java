@@ -88,8 +88,8 @@ public class DatabaseTest {
     @Test
     public void getSelectedColumnsMissingColumn() throws Exception {
         HashMap<String, Table> usedTables = new HashMap<>();
-        Table tbl1 = new Table("tbl1").addColumn(new Column("A1", "string", false, false))
-                .addColumn(new Column("id", "int", true, true));
+        Table tbl1 = new Table("tbl1").addColumn("A1", "string", false, false)
+                .addColumn("id", "int", true, true);
         usedTables.put("tbl1", tbl1);
         List<StringPair> selectedCols;
 
@@ -122,10 +122,10 @@ public class DatabaseTest {
     @Test
     public void getSelectedColumnsAmbiguousColumn() throws Exception {
         HashMap<String, Table> usedTables = new HashMap<>();
-        Table tbl1 = new Table("tbl1").addColumn(new Column("A1", "string", false, false))
-                .addColumn(new Column("id", "int", true, true));
-        Table tbl2 = new Table("tbl2").addColumn(new Column("B1", "string", false, false))
-                .addColumn(new Column("id", "int", true, true));
+        Table tbl1 = new Table("tbl1").addColumn("A1", "string", false, false)
+                .addColumn("id", "int", true, true);
+        Table tbl2 = new Table("tbl2").addColumn("B1", "string", false, false)
+                .addColumn("id", "int", true, true);
         usedTables.put("tbl1", tbl1);
         usedTables.put("tbl2", tbl2);
         List<StringPair> selectedCols;
@@ -143,11 +143,11 @@ public class DatabaseTest {
     public void getSelectedColumns() throws Exception {
         HashMap<String, Table> usedTables = new HashMap<>();
         Table tbl1 = new Table("tbl1")
-                .addColumn(new Column("A1", "string", false, false))
-                .addColumn(new Column("id", "int", true, true));
+                .addColumn("A1", "string", false, false)
+                .addColumn("id", "int", true, true);
         Table tbl2 = new Table("tbl2")
-                .addColumn(new Column("B1", "string", false, false))
-                .addColumn(new Column("id", "int", true, true));
+                .addColumn("B1", "string", false, false)
+                .addColumn("id", "int", true, true);
         usedTables.put("tbl1", tbl1);
         usedTables.put("tbl", tbl1);
         usedTables.put("tbl2", tbl2);
@@ -177,11 +177,11 @@ public class DatabaseTest {
     public void getSelectedColumnsStar() throws Exception {
         HashMap<String, Table> usedTables = new HashMap<>();
         Table tbl1 = new Table("tbl1")
-                .addColumn(new Column("A1", "string", false, false))
-                .addColumn(new Column("id", "int", true, true));
+                .addColumn("A1", "string", false, false)
+                .addColumn("id", "int", true, true);
         Table tbl2 = new Table("tbl2")
-                .addColumn(new Column("B1", "string", false, false))
-                .addColumn(new Column("id", "int", true, true));
+                .addColumn("B1", "string", false, false)
+                .addColumn("id", "int", true, true);
         usedTables.put("tbl", tbl1);
         usedTables.put("tbl2", tbl2);
 

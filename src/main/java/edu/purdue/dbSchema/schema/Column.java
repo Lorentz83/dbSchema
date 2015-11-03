@@ -10,8 +10,9 @@ public class Column {
     private final String _type;
     private final boolean _notNull;
     private final boolean _unique;
+    private final Table _table;
 
-    public Column(String name, String type, boolean notNull, boolean unique) {
+    Column(String name, String type, boolean notNull, boolean unique, Table table) {
         if (name == null || type == null) {
             throw new NullPointerException("name or type");
         }
@@ -22,6 +23,7 @@ public class Column {
         _type = type;
         _notNull = notNull;
         _unique = unique;
+        _table = table;
     }
 
     public String getName() {
@@ -57,20 +59,13 @@ public class Column {
     public int hashCode() {
         int hash = 7;
         hash = 97 * hash + _name.hashCode();
-        hash = 97 * hash + _type.hashCode();
+        hash = 97 * hash + (_table == null ? 0 : _table.getName().hashCode());
         return hash;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        Column other = (Column) obj;
-        return _name.equals(other._name)
-                && _type.equals(other._type)
-                && _notNull == other._notNull
-                && _unique == other._unique;
+        return this == obj;
     }
 
 }

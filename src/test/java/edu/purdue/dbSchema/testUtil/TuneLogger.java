@@ -1,4 +1,4 @@
-package edu.purdue.dbSchema.util;
+package edu.purdue.dbSchema.testUtil;
 
 import edu.purdue.dbSchema.parser.SqlParserTest;
 import java.io.IOException;

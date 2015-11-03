@@ -26,11 +26,12 @@ public class Table {
         _cols = new TreeMap<String, Column>();
     }
 
-    public Table addColumn(Column col) throws SqlSemanticException {
-        if (_cols.containsKey(col.getName())) {
-            throw new SqlSemanticException("column '%s' specified more than once", col.getName());
+    public Table addColumn(String name, String type, boolean notNull, boolean unique) throws SqlSemanticException {
+        if (_cols.containsKey(name)) {
+            throw new SqlSemanticException("column '%s' specified more than once", name);
         }
-        _cols.put(col.getName(), col);
+        Column col = new Column(name, type, notNull, unique, this);
+        _cols.put(name, col);
         return this;
     }
 
@@ -49,12 +50,7 @@ public class Table {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        Table other = (Table) obj;
-        return _name.equals(other._name)
-                && _cols.equals(other._cols);
+        return this == obj;
     }
 
     @Override
