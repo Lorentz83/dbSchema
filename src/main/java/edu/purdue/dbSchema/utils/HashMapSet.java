@@ -7,18 +7,23 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * An implementation of MapSet which uses {@link HashMap} and {@link {HashSet}.
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
+ *
+ * @param <K> the type of the key.
+ * @param <V> the type of the values.
  */
-public class MapSet<K, V> {
+public class HashMapSet<K, V> implements IMapSet<K, V> {
 
-    private final Map<K, Set<V>> _mem = new HashMap<>();
+    private final Map<K, HashSet<V>> _mem = new HashMap<>();
 
-    public boolean put(K key, V value) {
+    @Override
+    public boolean put(K key, V value) throws NullPointerException {
         if (key == null || value == null) {
             throw new NullPointerException();
         }
-        Set<V> set = _mem.get(key);
+        HashSet<V> set = _mem.get(key);
         if (set == null) {
             set = new HashSet<>();
             _mem.put(key, set);
@@ -26,7 +31,8 @@ public class MapSet<K, V> {
         return set.add(value);
     }
 
-    public boolean contains(K key, V value) {
+    @Override
+    public boolean contains(K key, V value) throws NullPointerException {
         if (key == null || value == null) {
             throw new NullPointerException();
         }
@@ -34,7 +40,8 @@ public class MapSet<K, V> {
         return (set == null) ? false : set.contains(value);
     }
 
-    public Set<V> getSet(K key) {
+    @Override
+    public Set<V> getSet(K key) throws NullPointerException {
         if (key == null) {
             throw new NullPointerException();
         }

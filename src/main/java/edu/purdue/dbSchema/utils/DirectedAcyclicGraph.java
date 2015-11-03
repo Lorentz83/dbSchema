@@ -11,15 +11,24 @@ import java.util.Set;
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
-public class DirectedAcyclicGraph<T> {
+public class DirectedAcyclicGraph<T> implements IDirectedAcyclicGraph<T> {
 
-    private final MapSet<T, T> _edges = new MapSet();
+    private final IMapSet<T, T> _edges;
 
-    public boolean add(T from, T to) {
+    DirectedAcyclicGraph(IMapSet<T, T> edges) {
+        _edges = edges;
+    }
+
+    public DirectedAcyclicGraph() {
+        this(new HashMapSet<T, T>());
+    }
+
+    @Override
+    public boolean add(T from, T to) throws NullPointerException {
         if (from == null || to == null) {
             throw new NullPointerException();
         }
-        for (T ancestor : getAnchestors(to)) {
+        for (T ancestor : getAncestorsAndSelf(to)) {
             if (ancestor.equals(from)) {
                 return false;
             }
@@ -28,22 +37,30 @@ public class DirectedAcyclicGraph<T> {
         return true;
     }
 
-    private Iterable<T> getAnchestors(T start) {
+    @Override
+    public Iterable<T> getAncestors(T start) throws NullPointerException {
+        if (start == null) {
+            throw new NullPointerException();
+        }
         return new DagIterable(_edges, start, false);
     }
 
-    private Iterable<T> getAnchestorsAndSelf(T start) {
+    @Override
+    public Iterable<T> getAncestorsAndSelf(T start) throws NullPointerException {
+        if (start == null) {
+            throw new NullPointerException();
+        }
         return new DagIterable(_edges, start, true);
     }
 }
 
 class DagIterable<T> implements Iterable<T> {
 
-    private final T _start;
-    private final MapSet<T, T> _edges;
-    private final boolean _includeStart;
+    final T _start;
+    final IMapSet<T, T> _edges;
+    final boolean _includeStart;
 
-    public DagIterable(MapSet<T, T> edges, T start, boolean includeStart) {
+    public DagIterable(IMapSet<T, T> edges, T start, boolean includeStart) {
         _edges = edges;
         _start = start;
         _includeStart = includeStart;
@@ -61,14 +78,12 @@ class DagIterable<T> implements Iterable<T> {
 
 class DagIterator<T> implements Iterator<T> {
 
-    private final T _start;
-    private final MapSet<T, T> _edges;
+    private final IMapSet<T, T> _edges;
     private final Set<T> _visited;
     private final Queue<T> _toReturn;
 
-    public DagIterator(MapSet<T, T> edges, T start) {
+    public DagIterator(IMapSet<T, T> edges, T start) {
         _edges = edges;
-        _start = start;
         _visited = new HashSet<>();
         _toReturn = new LinkedList<>();
 

@@ -12,11 +12,11 @@ import org.junit.Test;
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
-public class MapSetTest {
+public class HashMapSetTest {
 
     @Test
     public void putNullArgs() {
-        MapSet<String, Integer> ms = new MapSet<>();
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
 
         try {
             ms.put(null, 1);
@@ -33,7 +33,7 @@ public class MapSetTest {
 
     @Test
     public void contains() {
-        MapSet<String, Integer> ms = new MapSet<>();
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
 
         assertThat(ms.contains("", 1), is(false));
         assertThat(ms.contains("", 2), is(false));
@@ -50,7 +50,7 @@ public class MapSetTest {
 
     @Test
     public void containsNullArgs() {
-        MapSet<String, Integer> ms = new MapSet<>();
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
         try {
             ms.contains("", null);
             fail("missing NullPointerException");
@@ -65,7 +65,7 @@ public class MapSetTest {
 
     @Test
     public void getSet() {
-        MapSet<String, Integer> ms = new MapSet<>();
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
         ms.put("", 1);
         ms.put("", 2);
 
@@ -79,7 +79,7 @@ public class MapSetTest {
 
     @Test
     public void getSetNullArgs() {
-        MapSet<String, Integer> ms = new MapSet<>();
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
         try {
             ms.getSet(null);
             fail("missing NullPointerException");
@@ -89,7 +89,7 @@ public class MapSetTest {
 
     @Test
     public void getSetUnmodifiableSet() {
-        MapSet<String, Integer> ms = new MapSet<>();
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
         Set<Integer> set;
         set = ms.getSet("");
         try {

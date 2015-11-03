@@ -10,7 +10,7 @@ import edu.purdue.dbSchema.parser.ParsedQuery;
 import edu.purdue.dbSchema.parser.SqlParser;
 import edu.purdue.dbSchema.parser.StringPair;
 import edu.purdue.dbSchema.utils.DirectedAcyclicGraph;
-import edu.purdue.dbSchema.utils.MapSet;
+import edu.purdue.dbSchema.utils.HashMapSet;
 import gudusoft.gsqlparser.EDbVendor;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,8 +26,8 @@ import java.util.TreeMap;
 public class Database {
 
     private final Map<String, Table> _tables;
-    private final MapSet<Column, String> _grantRead;
-    private final MapSet<Column, String> _grantWrite;
+    private final HashMapSet<Column, String> _grantRead;
+    private final HashMapSet<Column, String> _grantWrite;
     private final DirectedAcyclicGraph<String> _roleGraph;
 
     private final EDbVendor _dbVendor;
@@ -38,8 +38,8 @@ public class Database {
         }
         _dbVendor = dbVendor;
         _tables = new TreeMap<>();
-        _grantRead = new MapSet<>();
-        _grantWrite = new MapSet<>();
+        _grantRead = new HashMapSet<>();
+        _grantWrite = new HashMapSet<>();
         _roleGraph = new DirectedAcyclicGraph<>();
     }
 
@@ -199,7 +199,7 @@ public class Database {
     }
 
     protected void evaluateGrant(Grant g) throws UnsupportedSqlException, SqlSemanticException {
-        MapSet<Column, String> permission;
+        HashMapSet<Column, String> permission;
         switch (g.getType()) {
             case READ:
                 permission = _grantRead;
