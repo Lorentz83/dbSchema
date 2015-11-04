@@ -1,6 +1,7 @@
 package edu.purdue.dbSchema.schema;
 
 import edu.purdue.dbSchema.erros.SqlSemanticException;
+import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
 import edu.purdue.dbSchema.parser.DlmQueryType;
 import edu.purdue.dbSchema.parser.Grant;
 import edu.purdue.dbSchema.parser.ParsedQuery;
@@ -240,6 +241,19 @@ public class DatabaseTest {
         } catch (SqlSemanticException ex) {
 
         }
+    }
+
+    @Test
+    public void evaluateGrant_ToTable() throws Exception {
+        try {
+            _testDb.parse("select id from tbl1", "user1");
+            fail("missing exception on circular grant");
+        } catch (UnauthorizedSqlException ex) {
+            assertThat(ex.getMessage(), is("the user 'user1' has no right to read 'id'"));
+        }
+        _testDb.evaluateGrant(new Grant(Grant.Type.READ, "user1", "tbl1", "id"));
+
+        _testDb.parse("select id from tbl1", "user1");
     }
 
     @Test
