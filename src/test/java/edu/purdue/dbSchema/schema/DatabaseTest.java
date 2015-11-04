@@ -6,6 +6,9 @@ import edu.purdue.dbSchema.parser.Grant;
 import edu.purdue.dbSchema.parser.ParsedQuery;
 import edu.purdue.dbSchema.parser.StringPair;
 import gudusoft.gsqlparser.EDbVendor;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -237,6 +240,20 @@ public class DatabaseTest {
         } catch (SqlSemanticException ex) {
 
         }
+    }
+
+    @Test
+    public void isSerializable() throws Exception {
+        _testDb.parse("create table tblnew(id int); grant select on tblnew to usernew");
+        ObjectOutputStream oos = new ObjectOutputStream(new OutputStream() {
+
+            @Override
+            public void write(int b) throws IOException {
+
+            }
+        });
+
+        oos.writeObject(_testDb);
     }
 
 }

@@ -3,6 +3,7 @@ package edu.purdue.dbSchema.utils;
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
 import edu.purdue.dbSchema.schema.Column;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
 
@@ -14,7 +15,7 @@ import java.util.Set;
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
-public interface IDbGrants {
+public interface IDbGrants extends Serializable {
 
     /**
      * Grants one role to another role or user.

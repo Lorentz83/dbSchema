@@ -1,10 +1,12 @@
 package edu.purdue.dbSchema.schema;
 
+import java.io.Serializable;
+
 /**
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
-public class Column {
+public class Column implements Serializable {
 
     private final String _name;
     private final String _type;

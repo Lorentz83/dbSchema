@@ -1,6 +1,7 @@
 package edu.purdue.dbSchema.schema;
 
 import edu.purdue.dbSchema.erros.SqlSemanticException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -10,7 +11,7 @@ import java.util.TreeMap;
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
-public class Table {
+public class Table implements Serializable {
 
     private final String _name;
     private final Map<String, Column> _cols;

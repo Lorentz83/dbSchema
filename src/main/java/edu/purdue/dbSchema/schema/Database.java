@@ -12,6 +12,7 @@ import edu.purdue.dbSchema.parser.StringPair;
 import edu.purdue.dbSchema.utils.DbGrants;
 import edu.purdue.dbSchema.utils.IDbGrants;
 import gudusoft.gsqlparser.EDbVendor;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,7 +28,7 @@ import java.util.function.BiConsumer;
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  */
-public class Database {
+public class Database implements Serializable {
 
     private final Map<String, Table> _tables;
     private final IDbGrants _grants;

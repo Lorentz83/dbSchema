@@ -1,5 +1,6 @@
 package edu.purdue.dbSchema.utils;
 
+import java.io.Serializable;
 import java.util.Set;
 
 /**
@@ -9,7 +10,7 @@ import java.util.Set;
  * @param <K> the type of the key.
  * @param <V> the type of the values.
  */
-public interface IMapSet<K, V> {
+public interface IMapSet<K, V> extends Serializable {
 
     /**
      * Returns true if value is contained in the key set.

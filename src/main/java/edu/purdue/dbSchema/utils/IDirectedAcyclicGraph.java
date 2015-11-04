@@ -1,12 +1,14 @@
 package edu.purdue.dbSchema.utils;
 
+import java.io.Serializable;
+
 /**
  * An object to contain a direct acyclic graph.
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
  * @param <T> the type of the nodes.
  */
-public interface IDirectedAcyclicGraph<T> {
+public interface IDirectedAcyclicGraph<T> extends Serializable {
 
     /**
      * Adds an edge to the graph.
