@@ -26,16 +26,16 @@ import java.util.function.BiConsumer;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
-public class Database implements Serializable {
+public class DatabaseEngine implements Serializable {
 
     private final Map<String, Table> _tables;
     private final IDbGrants _grants;
 
     private final EDbVendor _dbVendor;
 
-    public Database(EDbVendor dbVendor) {
+    public DatabaseEngine(EDbVendor dbVendor) {
         if (dbVendor == null) {
             throw new NullPointerException("dbVendor");
         }

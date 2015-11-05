@@ -9,7 +9,7 @@ import java.util.Set;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class DirectedAcyclicGraph<T> implements IDirectedAcyclicGraph<T> {
 
@@ -56,9 +56,9 @@ public class DirectedAcyclicGraph<T> implements IDirectedAcyclicGraph<T> {
 
 class DagIterable<T> implements Iterable<T> {
 
-    final T _start;
-    final IMapSet<T, T> _edges;
-    final boolean _includeStart;
+    private final T _start;
+    private final IMapSet<T, T> _edges;
+    private final boolean _includeStart;
 
     public DagIterable(IMapSet<T, T> edges, T start, boolean includeStart) {
         _edges = edges;

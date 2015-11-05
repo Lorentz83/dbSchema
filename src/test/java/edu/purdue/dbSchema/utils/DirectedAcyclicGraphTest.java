@@ -1,6 +1,7 @@
 package edu.purdue.dbSchema.utils;
 
 import java.util.ArrayList;
+import mockit.Deencapsulation;
 import mockit.Mocked;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -15,7 +16,7 @@ import org.junit.Test;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class DirectedAcyclicGraphTest {
 
@@ -48,9 +49,10 @@ public class DirectedAcyclicGraphTest {
         Iterable<String> it = dag.followNode(start);
         assertThat(it, instanceOf(DagIterable.class));
         DagIterable<String> actualIt = (DagIterable<String>) it;
-        assertThat(actualIt._start, is(start));
-        assertThat(actualIt._edges, sameInstance(edges));
-        assertThat(actualIt._includeStart, is(false));
+
+        assertThat(Deencapsulation.getField(actualIt, String.class), is(start));
+        assertThat(Deencapsulation.getField(actualIt, "_edges"), sameInstance(edges));
+        assertThat(Deencapsulation.getField(actualIt, boolean.class), is(false));
     }
 
     @Test
@@ -60,9 +62,9 @@ public class DirectedAcyclicGraphTest {
         Iterable<String> it = dag.followNodeAndSelef(start);
         assertThat(it, instanceOf(DagIterable.class));
         DagIterable<String> actualIt = (DagIterable<String>) it;
-        assertThat(actualIt._start, is(start));
-        assertThat(actualIt._edges, sameInstance(edges));
-        assertThat(actualIt._includeStart, is(true));
+        assertThat(Deencapsulation.getField(actualIt, String.class), is(start));
+        assertThat(Deencapsulation.getField(actualIt, "_edges"), sameInstance(edges));
+        assertThat(Deencapsulation.getField(actualIt, boolean.class), is(true));
     }
 
     @Test

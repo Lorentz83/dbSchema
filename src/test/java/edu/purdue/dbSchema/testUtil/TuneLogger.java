@@ -7,7 +7,7 @@ import java.util.logging.LogManager;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class TuneLogger {
 

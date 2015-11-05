@@ -26,16 +26,16 @@ import org.junit.Test;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
-public class DatabaseTest {
+public class DatabaseEngineTest {
 
-    Database _testDb;
+    DatabaseEngine _testDb;
     ParsedQuery _select;
 
     @Before
     public void initTestDb() throws Exception {
-        _testDb = new Database(EDbVendor.dbvoracle);
+        _testDb = new DatabaseEngine(EDbVendor.dbvoracle);
         _testDb.parse("create table tbl1(id integer, f1 varchar)");
         _testDb.parse("create table tbl2(id integer, f2 varchar)");
         _select = new ParsedQuery(DlmQueryType.SELECT);
@@ -100,7 +100,7 @@ public class DatabaseTest {
         try {
             selectedCols = new ArrayList<>();
             selectedCols.add(new StringPair("", "C"));
-            Database.getSelectedColumns(usedTables, selectedCols);
+            DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("column 'C' does not exist"));
@@ -108,7 +108,7 @@ public class DatabaseTest {
         try {
             selectedCols = new ArrayList<>();
             selectedCols.add(new StringPair("tbl1", "C"));
-            Database.getSelectedColumns(usedTables, selectedCols);
+            DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("column 'C' does not exist"));
@@ -116,7 +116,7 @@ public class DatabaseTest {
         try {
             selectedCols = new ArrayList<>();
             selectedCols.add(new StringPair("tblX", "C"));
-            Database.getSelectedColumns(usedTables, selectedCols);
+            DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("missing FROM-clause entry for table 'tblX'"));
@@ -136,7 +136,7 @@ public class DatabaseTest {
         try {
             selectedCols = new ArrayList<>();
             selectedCols.add(new StringPair("", "id"));
-            Database.getSelectedColumns(usedTables, selectedCols);
+            DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("column reference 'id' is ambiguous"));
@@ -160,19 +160,19 @@ public class DatabaseTest {
 
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl2", "id"));
-        cols = Database.getSelectedColumns(usedTables, selectedCols);
+        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
         assertThat(cols, hasSize(1));
         assertThat(cols.get(0), sameInstance(tbl2.getColumn("id")));
 
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("", "B1"));
-        cols = Database.getSelectedColumns(usedTables, selectedCols);
+        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
         assertThat(cols, hasSize(1));
         assertThat(cols.get(0), sameInstance(tbl2.getColumn("B1")));
 
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl", "A1"));
-        cols = Database.getSelectedColumns(usedTables, selectedCols);
+        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
         assertThat(cols, hasSize(1));
         assertThat(cols.get(0), sameInstance(tbl1.getColumn("A1")));
     }
@@ -194,14 +194,14 @@ public class DatabaseTest {
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl", "*"));
 
-        cols = Database.getSelectedColumns(usedTables, selectedCols);
+        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
         assertThat(cols, containsInAnyOrder(tbl1.getColumns().toArray()));
 
         ArrayList<Column> expectedCols;
 
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("", "*"));
-        cols = Database.getSelectedColumns(usedTables, selectedCols);
+        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
         expectedCols = new ArrayList<Column>();
         expectedCols.addAll(tbl1.getColumns());
         expectedCols.addAll(tbl2.getColumns());
@@ -210,7 +210,7 @@ public class DatabaseTest {
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl", "id"));
         selectedCols.add(new StringPair("tbl", "*"));
-        cols = Database.getSelectedColumns(usedTables, selectedCols);
+        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
         expectedCols = new ArrayList<Column>();
         expectedCols.addAll(tbl1.getColumns());
         expectedCols.add(tbl1.getColumn("id"));

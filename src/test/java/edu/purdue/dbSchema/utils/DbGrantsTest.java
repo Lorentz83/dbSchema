@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.empty;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class DbGrantsTest {
 

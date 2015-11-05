@@ -34,12 +34,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * http://www.dpriver.com/blog/list-of-demos-illustrate-how-to-use-general-sql-parser/analyzing-ddl-statement/
- * http://www.dpriver.com/blog/list-of-demos-illustrate-how-to-use-general-sql-parser/decoding-sql-grammar-select-statement/
+ * Is an high level parser. This class wraps the real SQL parser exposing a
+ * higher level APIs which parse only a subset of SQL returning a summary of the
+ * features required by this project.
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class SqlParser {
+    /*
+     From these examples.
+     http://www.dpriver.com/blog/list-of-demos-illustrate-how-to-use-general-sql-parser/analyzing-ddl-statement/
+     http://www.dpriver.com/blog/list-of-demos-illustrate-how-to-use-general-sql-parser/decoding-sql-grammar-select-statement/
+     */
 
     private final static Logger LOGGER = Logger.getLogger(SqlParser.class.getName());
     private final EDbVendor _dbVendor;
@@ -47,18 +53,42 @@ public class SqlParser {
     private List<ParsedQuery> _queries;
     private List<Grant> _grants;
 
+    /**
+     * Gets the grants parsed by the last invocation of {@link #parse(java.lang.String)
+     * }.
+     *
+     * @return the list of grant statements parsed or an empty list.
+     */
     public List<Grant> getGrants() {
         return _grants;
     }
 
+    /**
+     * Gets the create table statements parsed by the last invocation of {@link #parse(java.lang.String)
+     * }.
+     *
+     * @return the list of create table statements parsed or an empty list.
+     */
     public List<Table> getTables() {
         return _tables;
     }
 
+    /**
+     * Gets the SQL queries parsed by the last invocation of {@link #parse(java.lang.String)
+     * }.
+     *
+     * @return the list of queries parsed or an empty list.
+     */
     public List<ParsedQuery> getDmlQueries() {
         return _queries;
     }
 
+    /**
+     * Creates a new parser instance.
+     *
+     * @param dbVendor the SQL dialect used by this parser.
+     * @throws NullPointerException if dbVendor is null.
+     */
     public SqlParser(EDbVendor dbVendor) {
         if (dbVendor == null) {
             throw new NullPointerException("dbVendor");
@@ -66,6 +96,19 @@ public class SqlParser {
         _dbVendor = dbVendor;
     }
 
+    /**
+     * Parse a string. The results will be stored and can be accessed using {@link #getDmlQueries()}, {@link #getGrants()
+     * } and {@link #getTables()}.
+     *
+     * @param sql the string to parse.
+     * @return the number of parsed SQL statements.
+     * @throws SqlParseException in case of parse error.
+     * @throws UnsupportedSqlException if the SQL is not supported by this
+     * abstraction level.
+     * @throws SqlSemanticException if the SQL is semantically incorrect (i.e.
+     * creates one table with two columns with the same name).
+     * @throws NullPointerException if sql is null.
+     */
     public int parse(String sql) throws SqlParseException, UnsupportedSqlException, SqlSemanticException {
         TGSqlParser sqlparser = new TGSqlParser(_dbVendor);
         sqlparser.setSqltext(sql);
@@ -152,7 +195,7 @@ public class SqlParser {
         return tbl;
     }
 
-    private void addWhereExpression(TExpression expression, ParsedQuery query) {
+    private void addColumnsName(TExpression expression, ParsedQuery query) {
         if (expression == null) {
             return;
         }
@@ -167,12 +210,12 @@ public class SqlParser {
             if (functionCall != null) { //this is a function call i.e. sum(tbl)
                 TExpressionList args = functionCall.getArgs();
                 for (int j = 0; j < args.size(); j++) {
-                    addWhereExpression(args.getExpression(j), query);
+                    addColumnsName(args.getExpression(j), query);
                 }
             }
             // in case of unary or binay expressions i.e. -col or col1 + col2
-            addWhereExpression(expression.getLeftOperand(), query);
-            addWhereExpression(expression.getRightOperand(), query);
+            addColumnsName(expression.getLeftOperand(), query);
+            addColumnsName(expression.getRightOperand(), query);
         }
     }
 
@@ -181,17 +224,14 @@ public class SqlParser {
         ParsedQuery query = new ParsedQuery(DlmQueryType.SELECT);
         if (pStmt.isCombinedQuery()) {
             throw new UnsupportedSqlException("cobined queries are not supported yet");
-//            // pStmt.getSetOperator() to know type of combined query (i.e. union, intersect...)
+//            pStmt.getSetOperator() //to know type of combined query (i.e. union, intersect...)
 //            analyzeSelectStmt(pStmt.getLeftStmt());
 //            analyzeSelectStmt(pStmt.getRightStmt());
-//            if (pStmt.getOrderbyClause() != null) {
-//                System.out.printf("order by clause %s\n", pStmt.getOrderbyClause().toString());
-//            }
         } else {
             //select list
             for (int i = 0; i < pStmt.getResultColumnList().size(); i++) {
                 TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
-                addWhereExpression(resultColumn.getExpr(), query);
+                addColumnsName(resultColumn.getExpr(), query);
             }
 
             //from clause, check this document for detailed information

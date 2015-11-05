@@ -1,10 +1,10 @@
 package edu.purdue.dbSchema.erros;
 
 /**
- * Represents an error in the sql semantic. Like trying to add a table that
+ * Indicates an error in the SQL semantic. Like trying to add a table that
  * already exists.
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class SqlSemanticException extends Exception {
 

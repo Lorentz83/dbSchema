@@ -13,7 +13,7 @@ import static org.junit.Assert.assertThat;
  * equality, this class contains helper methods to check if all the fields are
  * equals.
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class SoftEqual {
 

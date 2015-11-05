@@ -3,8 +3,11 @@ package edu.purdue.dbSchema.schema;
 import java.io.Serializable;
 
 /**
+ * Represents a table column. This is an immutable object linked to the table
+ * which created it. Equality on columns considers also the table they belong
+ * to.
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class Column implements Serializable {
 
@@ -14,7 +17,18 @@ public class Column implements Serializable {
     private final boolean _unique;
     private final Table _table;
 
-    Column(String name, String type, boolean notNull, boolean unique, Table table) {
+    /**
+     * Creates a column.
+     *
+     * @param name the column name.
+     * @param type the colum type.
+     * @param notNull if the column is not not null.
+     * @param unique if the column is unique or primary key.
+     * @param table the table this column belongs.
+     * @throws NullPointerException if name or type are null.
+     * @throws IllegalArgumentException if name or type are empty.
+     */
+    Column(String name, String type, boolean notNull, boolean unique, Table table) throws NullPointerException, IllegalArgumentException {
         if (name == null || type == null) {
             throw new NullPointerException("name or type");
         }
@@ -65,6 +79,12 @@ public class Column implements Serializable {
         return hash;
     }
 
+    /**
+     * Returns if another object is actually the same object of this.
+     *
+     * @param obj the object to compare.
+     * @return if obj == this.
+     */
     @Override
     public boolean equals(Object obj) {
         return this == obj;

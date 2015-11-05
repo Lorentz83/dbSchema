@@ -3,8 +3,9 @@ package edu.purdue.dbSchema.parser;
 import java.util.Objects;
 
 /**
+ * Is an immutable object containing a pair of strings.
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class StringPair {
 

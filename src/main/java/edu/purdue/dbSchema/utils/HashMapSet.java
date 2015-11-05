@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * An implementation of MapSet which uses {@link HashMap} and {@link {HashSet}.
+ * An implementation of MapSet which uses {@link HashMap} and {@link HashSet}.
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  *
  * @param <K> the type of the key.
  * @param <V> the type of the values.

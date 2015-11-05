@@ -9,7 +9,7 @@ import java.util.Set;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class DbGrants implements IDbGrants {
 

@@ -3,14 +3,29 @@ package edu.purdue.dbSchema.parser;
 import java.util.Objects;
 
 /**
+ * Contains the representation of a grant statement as seen by the parser.
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class Grant {
 
+    /**
+     * Represents the type of a grant.
+     */
     public enum Type {
 
-        READ, WRITE, ROLE
+        /**
+         * Grants a read privilege.
+         */
+        READ,
+        /**
+         * Grants a write privilege.
+         */
+        WRITE,
+        /**
+         * Grants a role.
+         */
+        ROLE
     };
 
     private final String _to;
@@ -19,7 +34,19 @@ public class Grant {
     private final String _column;
     private final Type _type;
 
-    public Grant(String role, String to) {
+    /**
+     * Creates a new role grant. I.e. the representation of GRANT admin TO user.
+     *
+     * @param role the role to be granted.
+     * @param to the user or role that receives the grant.
+     * @throws NullPointerException if role or to are null.
+     * @throws IllegalArgumentException if role or to are empty.
+     */
+    public Grant(String role, String to) throws NullPointerException, IllegalArgumentException {
+        if (role.isEmpty() || to.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
         _to = to;
         _role = role;
         _type = Type.ROLE;
@@ -27,10 +54,21 @@ public class Grant {
         _column = null;
     }
 
-    public Grant(Type type, String to, String table, String column) {
+    /**
+     * Creates a grant to a table.
+     *
+     * @param type READ or WRITE.
+     * @param to the user or role who receive the grant.
+     * @param table the table which is granted.
+     * @param column the column which is granted. An empty value means grant all
+     * the columns.
+     * @throws IllegalArgumentException if type is ROLE or to or table are
+     * empty.
+     */
+    public Grant(Type type, String to, String table, String column) throws IllegalArgumentException, NullPointerException {
         _to = to;
         _role = null;
-        if (type == Type.ROLE) {
+        if (type == Type.ROLE || to.isEmpty() || table.isEmpty()) {
             throw new IllegalArgumentException("Cannot grant both to role and table");
         }
         _type = type;
@@ -38,22 +76,48 @@ public class Grant {
         _column = column;
     }
 
+    /**
+     * Returns the user or role who receive the grant.
+     *
+     * @return a never empty string.
+     */
     public String getTo() {
         return _to;
     }
 
+    /**
+     * Returns the role that is granted.
+     *
+     * @return the role of null if type is not ROLE.
+     */
     public String getRole() {
         return _role;
     }
 
+    /**
+     * Returns the table name which is granted.
+     *
+     * @return the table name or null if type is ROLE.
+     */
     public String getTable() {
         return _table;
     }
 
+    /**
+     * Returns the column name which is granted.
+     *
+     * @return the column name, empty string if all the columns are granted or
+     * null if type is ROLE.
+     */
     public String getColumn() {
         return _column;
     }
 
+    /**
+     * Returns the type of the grant.
+     *
+     * @return the type.
+     */
     public Type getType() {
         return _type;
     }
