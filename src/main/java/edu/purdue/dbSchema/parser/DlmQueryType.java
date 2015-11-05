@@ -6,5 +6,5 @@ package edu.purdue.dbSchema.parser;
  */
 public enum DlmQueryType {
 
-    SELECT, UPDATE, DELETE
+    SELECT, UPDATE, DELETE, INSERT
 };

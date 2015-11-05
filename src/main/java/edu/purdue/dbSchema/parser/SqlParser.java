@@ -17,9 +17,15 @@ import gudusoft.gsqlparser.nodes.TFunctionCall;
 import gudusoft.gsqlparser.nodes.TJoin;
 import gudusoft.gsqlparser.nodes.TJoinItem;
 import gudusoft.gsqlparser.nodes.TObjectName;
+import gudusoft.gsqlparser.nodes.TObjectNameList;
 import gudusoft.gsqlparser.nodes.TResultColumn;
+import gudusoft.gsqlparser.nodes.TResultColumnList;
+import gudusoft.gsqlparser.nodes.TWhereClause;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
+import gudusoft.gsqlparser.stmt.TDeleteSqlStatement;
+import gudusoft.gsqlparser.stmt.TInsertSqlStatement;
 import gudusoft.gsqlparser.stmt.TSelectSqlStatement;
+import gudusoft.gsqlparser.stmt.TUpdateSqlStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -80,24 +86,28 @@ public class SqlParser {
     }
 
     protected void analyzeStmt(TCustomSqlStatement stmt) throws UnsupportedSqlException, SqlSemanticException, SqlParseException {
+        ParsedQuery q;
         switch (stmt.sqlstatementtype) {
             case sstselect:
-                ParsedQuery q = analyzeSelectStmt((TSelectSqlStatement) stmt);
+                q = analyzeSelectStmt((TSelectSqlStatement) stmt);
                 _queries.add(q);
                 break;
-//            case sstupdate:
-//                analyzeUpdateStmt((TUpdateSqlStatement) stmt);
-//                break;
+            case sstinsert:
+                q = analyzeInsertStmt((TInsertSqlStatement) stmt);
+                _queries.add(q);
+                break;
+            case sstupdate:
+                q = analyzeUpdateStmt((TUpdateSqlStatement) stmt);
+                _queries.add(q);
+                break;
+            case sstdelete:
+                q = analyzeDeleteStmt((TDeleteSqlStatement) stmt);
+                _queries.add(q);
+                break;
             case sstcreatetable:
                 Table t = analyzeCreateTableStmt((TCreateTableSqlStatement) stmt);
                 _tables.add(t);
                 break;
-//            case sstaltertable:
-//                analyzeAlterTableStmt((TAlterTableStatement) stmt);
-//                break;
-//            case sstcreateview:
-//                analyzeCreateViewStmt((TCreateViewSqlStatement) stmt);
-//                break;
             case sstGrant:
             case sstoraclegrant:
                 Grant grant = analyzeGrantStmt(stmt);
@@ -151,7 +161,7 @@ public class SqlParser {
             // we currently ignore the schema
             String colName = complexName.getColumnNameOnly();
             String tblName = complexName.getTableString();
-            query.addSelect(tblName, colName);
+            query.addMainColumn(tblName, colName);
         } else { // if it is not a col name, go recursively
             TFunctionCall functionCall = expression.getFunctionCall();
             if (functionCall != null) { //this is a function call i.e. sum(tbl)
@@ -252,13 +262,7 @@ public class SqlParser {
                         throw new UnsupportedSqlException("unknown type in join!");
                 }
             }
-
-            //where clause
-            if (pStmt.getWhereClause() != null) {
-                TExpression conds = pStmt.getWhereClause().getCondition();
-                countWhereConditions(conds, query);
-                System.out.printf("where clause: \n%s\n", pStmt.getWhereClause().toString());
-            }
+            parseWhere(query, pStmt.getWhereClause());
 
             // group by pStmt.getGroupByClause()
             // order by pStmt.getOrderbyClause()
@@ -278,6 +282,14 @@ public class SqlParser {
             }
         }
         return query;
+    }
+
+    private void parseWhere(ParsedQuery query, TWhereClause where) throws UnsupportedSqlException {
+        if (where != null) {
+            TExpression conds = where.getCondition();
+            countWhereConditions(conds, query);
+            System.out.printf("where clause: \n%s\n", where.toString());
+        }
     }
 
     private void countWhereConditions(TExpression conds, ParsedQuery query) throws UnsupportedSqlException {
@@ -342,4 +354,34 @@ public class SqlParser {
         }
         return new Grant(what, to);
     }
+
+    private ParsedQuery analyzeInsertStmt(TInsertSqlStatement stmt) {
+        ParsedQuery ret = new ParsedQuery(DlmQueryType.INSERT);
+        ret.addFrom(stmt.getTargetTable().getName(), "");
+        TObjectNameList cols = stmt.getColumnList();
+        for (int n = 0; n < cols.size(); n++) {
+            String col = cols.getObjectName(n).getColumnNameOnly();
+            ret.addMainColumn("", col);
+        }
+        return ret;
+    }
+
+    private ParsedQuery analyzeDeleteStmt(TDeleteSqlStatement stmt) throws UnsupportedSqlException {
+        ParsedQuery ret = new ParsedQuery(DlmQueryType.DELETE);
+        ret.addFrom(stmt.getTargetTable().getName(), "");
+        parseWhere(ret, stmt.getWhereClause());
+        return ret;
+    }
+
+    private ParsedQuery analyzeUpdateStmt(TUpdateSqlStatement stmt) throws UnsupportedSqlException {
+        ParsedQuery ret = new ParsedQuery(DlmQueryType.UPDATE);
+        ret.addFrom(stmt.getTargetTable().getName(), "");
+        TResultColumnList cols = stmt.getResultColumnList();
+        for (int i = 0; i < cols.size(); i++) {
+            ret.addMainColumn("", cols.getResultColumn(i).getExpr().getLeftOperand().toString());
+        }
+        parseWhere(ret, stmt.getWhereClause());
+        return ret;
+    }
+
 }

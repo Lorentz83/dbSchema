@@ -91,13 +91,13 @@ public class Database implements Serializable {
             throw new IllegalArgumentException("expected select got " + parsed.type);
         }
         HashMap<String, Table> usedTables = filterTables(parsed.from);
-        return getSelectedColumns(usedTables, parsed.select);
+        return getSelectedColumns(usedTables, parsed.mainColumns);
     }
 
     /**
-     * Returns a list of selected columns.
+     * Returns a list of selected mainColumns.
      *
-     * @param usedTables the tables (with aliases) to search for columns.
+     * @param usedTables the tables (with aliases) to search for mainColumns.
      * @param selectedCols a pair of (table name, column name) where the table
      * name may be empty.
      * @return a list of Columns used.

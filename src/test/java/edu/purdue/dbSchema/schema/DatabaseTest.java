@@ -222,8 +222,8 @@ public class DatabaseTest {
         List<Column> res;
         _select.addFrom("tbl1", "");
         _select.addFrom("tbl2", "t2");
-        _select.addSelect("tbl1", "id");
-        _select.addSelect("t2", "f2");
+        _select.addMainColumn("tbl1", "id");
+        _select.addMainColumn("t2", "f2");
         res = _testDb.evaluateSelect(_select);
 
         Column c1 = _testDb.getTable("tbl1").getColumn("id");
