@@ -12,7 +12,7 @@ public class UnauthorizedSqlException extends Exception {
         super(msg);
     }
 
-    public UnauthorizedSqlException(String format, String... args) {
+    public UnauthorizedSqlException(String format, Object... args) {
         super(String.format(format, (Object[]) args));
     }
 }

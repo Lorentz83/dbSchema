@@ -12,7 +12,8 @@ public class SqlParseException extends Exception {
         super(msg);
     }
 
-    public SqlParseException(String format, String... args) {
+    public SqlParseException(String format, Object... args) {
         super(String.format(format, (Object[]) args));
     }
+
 }

@@ -12,7 +12,6 @@ import edu.purdue.dbSchema.parser.StringPair;
 import edu.purdue.dbSchema.utils.DbGrants;
 import edu.purdue.dbSchema.utils.IDbGrants;
 import gudusoft.gsqlparser.EDbVendor;
-import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -238,12 +237,7 @@ public class DatabaseEngine implements Serializable {
         }
     }
 
-    public void dumpInfo(PrintStream out) {
-        out.println("Db type " + _dbVendor);
-        out.println("=== TABLE LIST ===");
-        for (Table t : _tables.values()) {
-            out.println(t.toString());
-        }
-        out.println("=== END TABLE LIST ===");
+    public Collection<Table> getTables() {
+        return _tables.values();
     }
 }

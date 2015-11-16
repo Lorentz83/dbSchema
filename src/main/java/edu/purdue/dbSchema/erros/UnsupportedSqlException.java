@@ -11,4 +11,8 @@ public class UnsupportedSqlException extends Exception {
     public UnsupportedSqlException(String msg) {
         super(msg);
     }
+
+    public UnsupportedSqlException(String format, Object... args) {
+        super(String.format(format, (Object[]) args));
+    }
 }

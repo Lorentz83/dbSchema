@@ -27,6 +27,14 @@ public class SqlParserTest {
     }
 
     @Test
+    public void parse_emptyStringNoError() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        assertThat(p.parse(""), is(0));
+        assertThat(p.parse(" \t"), is(0));
+        assertThat(p.parse(" ;  ;"), is(0));
+    }
+
+    @Test
     public void parse_grant() throws Exception {
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
         p.parse("GRANT roleName TO userName; GRANT SELECT ON tbl.col TO usr");

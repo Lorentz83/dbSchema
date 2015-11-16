@@ -12,7 +12,7 @@ public class SqlSemanticException extends Exception {
         super(msg);
     }
 
-    public SqlSemanticException(String format, String... args) {
+    public SqlSemanticException(String format, Object... args) {
         super(String.format(format, (Object[]) args));
     }
 }

@@ -110,15 +110,20 @@ public class SqlParser {
      * @throws NullPointerException if sql is null.
      */
     public int parse(String sql) throws SqlParseException, UnsupportedSqlException, SqlSemanticException {
-        TGSqlParser sqlparser = new TGSqlParser(_dbVendor);
-        sqlparser.setSqltext(sql);
-        if (sqlparser.parse() != 0) {
-            throw new SqlParseException(sqlparser.getErrormessage());
-        }
-
+        sql = sql.trim();
         _tables = new ArrayList<>();
         _queries = new ArrayList<>();
         _grants = new ArrayList<>();
+
+        if (sql.isEmpty()) {
+            return 0;
+        }
+
+        TGSqlParser sqlparser = new TGSqlParser(_dbVendor);
+        sqlparser.setSqltext(sql);
+        if (sqlparser.parse() != 0) {
+            throw new SqlParseException("Errors: %s; Error message:", sqlparser.getErrorCount(), sqlparser.getErrormessage());
+        }
 
         int stmNum = sqlparser.sqlstatements.size();
         for (int i = 0; i < stmNum; i++) {
@@ -347,8 +352,12 @@ public class SqlParser {
                 countWhereConditions(conds.getLeftOperand(), query);
                 countWhereConditions(conds.getRightOperand(), query);
                 break;
+            case simple_comparison_t: // f_id [ = > < ... ] '340867051503681675'
+            case in_t: // f_arrive_ap_id in ('211')
+                query.addWhere();
+                break;
             default:
-                LOGGER.log(Level.WARNING, "Unknown condition {0}", expressionType.toString());
+                LOGGER.log(Level.WARNING, "Unknown expression type: {0}, found in: {1}", new Object[]{expressionType.toString(), conds.toString()});
                 query.addWhere();
         }
     }
