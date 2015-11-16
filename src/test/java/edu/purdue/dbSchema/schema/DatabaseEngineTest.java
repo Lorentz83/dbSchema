@@ -17,6 +17,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
@@ -219,16 +220,17 @@ public class DatabaseEngineTest {
 
     @Test
     public void evaluateSelectGetColumns() throws Exception {
-        List<Column> res;
         _select.addFrom("tbl1", "");
         _select.addFrom("tbl2", "t2");
         _select.addMainColumn("tbl1", "id");
         _select.addMainColumn("t2", "f2");
-        res = _testDb.evaluateSelect(_select);
+        QueryFeature res = _testDb.evaluateDlmQuery(_select, null);
 
         Column c1 = _testDb.getTable("tbl1").getColumn("id");
         Column c2 = _testDb.getTable("tbl2").getColumn("f2");
-        assertThat(res, containsInAnyOrder(c1, c2));
+        assertThat(res.getRoles(), empty());
+        assertThat(res.getFilteredCols(), empty());
+        assertThat(res.getUsedCols(), containsInAnyOrder(c1, c2));
     }
 
     @Test

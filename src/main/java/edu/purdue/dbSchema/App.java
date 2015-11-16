@@ -2,8 +2,10 @@ package edu.purdue.dbSchema;
 
 import edu.purdue.dbSchema.erros.SqlParseException;
 import edu.purdue.dbSchema.erros.SqlSemanticException;
+import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
 import edu.purdue.dbSchema.erros.UnsupportedSqlException;
 import edu.purdue.dbSchema.schema.DatabaseEngine;
+import edu.purdue.dbSchema.schema.QueryFeature;
 import edu.purdue.dbSchema.schema.Table;
 import gudusoft.gsqlparser.EDbVendor;
 import java.io.BufferedReader;
@@ -14,14 +16,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.List;
 import java.util.Scanner;
+import java.util.logging.LogManager;
 
 public class App {
 
-    public static void main(String[] args) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, IOException, ClassNotFoundException {
+    private final static String username = "user";
+
+    public static void main(String[] args) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, IOException, ClassNotFoundException, UnauthorizedSqlException {
+        tuneLog();
         DatabaseEngine db;
         String dbFileName = args[0];
         InputStream in;
@@ -51,12 +55,7 @@ public class App {
 
     }
 
-    static String readFile(String path, Charset encoding) throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
-    }
-
-    private static DatabaseEngine initDb(String dbStorage, InputStream in) throws IOException {
+    private static DatabaseEngine initDb(String dbStorage, InputStream in) throws IOException, SqlParseException, UnsupportedSqlException, SqlSemanticException {
         DatabaseEngine db = new DatabaseEngine(EDbVendor.dbvpostgresql);
         try (Scanner scanner = new Scanner(in);
                 ObjectOutputStream o = new ObjectOutputStream(new FileOutputStream(dbStorage))) {
@@ -70,14 +69,20 @@ public class App {
                     System.err.println(createTable);
                     ex.printStackTrace(System.err);
                     System.err.println(" --- end error ---");
+                    throw ex;
                 }
+            }
+
+            for (Table t : db.getTables()) {
+                db.parse(String.format("GRANT SELECT ON %s TO %s", t.getName().normalize(), username));
+                db.parse(String.format("GRANT INSERT ON %s TO %s", t.getName().normalize(), username));
             }
             o.writeObject(db);
             return db;
         }
     }
 
-    private static DatabaseEngine readDb(String dbStorage) throws IOException, ClassNotFoundException {
+    static DatabaseEngine readDb(String dbStorage) throws IOException, ClassNotFoundException {
         try (ObjectInputStream o = new ObjectInputStream(new FileInputStream(dbStorage))) {
             return (DatabaseEngine) o.readObject();
         }
@@ -85,17 +90,28 @@ public class App {
 
     private static void parseLine(DatabaseEngine db, InputStream in) throws IOException {
         String line;
+        FeatureFormatter featureFormatter = new FeatureFormatter(db.getTables(), System.out);
+        featureFormatter.header();
         try (BufferedReader bin = new BufferedReader(new InputStreamReader(in))) {
             while ((line = bin.readLine()) != null) {
                 try {
-                    db.parse(line);
-                    System.out.println("Parsing " + line + "ok");
-                } catch (SqlParseException | UnsupportedSqlException | SqlSemanticException ex) {
-                    System.err.println("Error parsing " + line);
+                    List<QueryFeature> features = db.parse(line, username);
+                    for (QueryFeature feature : features) {
+                        featureFormatter.format(feature);
+                    }
+                } catch (SqlParseException | UnsupportedSqlException | UnauthorizedSqlException | SqlSemanticException ex) {
+                    System.err.println(" --- Error parsing ---");
+                    System.err.println(line);
                     ex.printStackTrace(System.err);
+                    System.err.println(" --- end error ---");
                 }
             }
         }
     }
 
+    public static void tuneLog() throws IOException {
+        try (InputStream inputStream = App.class.getClassLoader().getResourceAsStream("logging.properties")) {
+            LogManager.getLogManager().readConfiguration(inputStream);
+        }
+    }
 }

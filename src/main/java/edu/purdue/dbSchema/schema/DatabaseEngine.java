@@ -15,6 +15,7 @@ import gudusoft.gsqlparser.EDbVendor;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,12 +24,16 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class DatabaseEngine implements Serializable {
+
+    static final Logger LOGGER = Logger.getLogger(DatabaseEngine.class.getName());
 
     private final Map<Name, Table> _tables;
     private final IDbGrants _grants;
@@ -43,24 +48,22 @@ public class DatabaseEngine implements Serializable {
         _grants = new DbGrants();
     }
 
-    public Set<Name> parse(String sql, String username) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, UnauthorizedSqlException {
-        Name normalizedName = new Name(username);
+    public List<QueryFeature> parse(String sql, String username) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, UnauthorizedSqlException {
+        Name normalizedUsername = new Name(username);
         SqlParser parser = new SqlParser(_dbVendor);
-        Set<Name> usedRoles = new HashSet<>();
+        List<QueryFeature> features = new ArrayList<>();
 
-        int ret = parser.parse(sql);
-        List<ParsedQuery> queries = parser.getDmlQueries();
-        if (ret != queries.size()) {
+        int parsedQueriesNum = parser.parse(sql);
+        List<ParsedQuery> parsedQueries = parser.getDmlQueries();
+        if (parsedQueriesNum != parsedQueries.size()) {
             throw new UnauthorizedSqlException("the query is not a SELECT/UPDATE/DELETE/INSERT");
         }
-        for (ParsedQuery q : queries) {
-            if (q.type != DlmQueryType.SELECT) {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-            List<Column> cols = evaluateSelect(q);
-            usedRoles.addAll(_grants.enforceRead(normalizedName, cols));
+
+        for (ParsedQuery q : parsedQueries) {
+            QueryFeature qf = evaluateDlmQuery(q, normalizedUsername);
+            features.add(qf);
         }
-        return usedRoles;
+        return features;
     }
 
     public int parse(String sql) throws SqlParseException, UnsupportedSqlException, SqlSemanticException {
@@ -75,23 +78,30 @@ public class DatabaseEngine implements Serializable {
             evaluateGrant(g);
         }
         for (ParsedQuery parsed : parser.getDmlQueries()) {
-            switch (parsed.type) {
-                case SELECT:
-                    evaluateSelect(parsed);
-                    break;
-                default:
-                    throw new UnsupportedSqlException(parsed.type.toString());
+            try {
+                evaluateDlmQuery(parsed, null);
+            } catch (UnauthorizedSqlException ex) {
+                LOGGER.log(Level.SEVERE, "This exception should never been thrown in this context", ex);
             }
         }
         return ret;
     }
 
-    protected List<Column> evaluateSelect(ParsedQuery parsed) throws SqlSemanticException {
-        if (parsed.type != DlmQueryType.SELECT) {
-            throw new IllegalArgumentException("expected select got " + parsed.type);
-        }
+    protected QueryFeature evaluateDlmQuery(ParsedQuery parsed, Name name) throws SqlSemanticException, NullPointerException, UnauthorizedSqlException {
         HashMap<Name, Table> usedTables = filterTables(parsed.from);
-        return getSelectedColumns(usedTables, parsed.mainColumns);
+        ArrayList<Column> select = getSelectedColumns(usedTables, parsed.mainColumns);
+        ArrayList<Column> where = getSelectedColumns(usedTables, parsed.whereColumns);
+        Set<Name> usedRoles = new HashSet<>();
+
+        if (name != null) {
+            if (parsed.type == DlmQueryType.SELECT) {
+                usedRoles.addAll(_grants.enforceRead(name, select));
+            } else {
+                usedRoles.addAll(_grants.enforceWrite(name, select));
+            }
+            usedRoles.addAll(_grants.enforceRead(name, where));
+        }
+        return new QueryFeature(parsed.type, select, where, usedRoles);
     }
 
     /**
@@ -181,10 +191,6 @@ public class DatabaseEngine implements Serializable {
         return usedTables;
     }
 
-    public Table getTable(String name) throws NoSuchElementException {
-        return _tables.get(new Name(name));
-    }
-
     protected void evaluateGrantToRole(Grant g) throws UnsupportedSqlException, SqlSemanticException {
         if (g.getType() != Grant.Type.ROLE) {
             throw new IllegalArgumentException("not grant to role");
@@ -236,6 +242,10 @@ public class DatabaseEngine implements Serializable {
     }
 
     public Collection<Table> getTables() {
-        return _tables.values();
+        return Collections.unmodifiableCollection(_tables.values());
+    }
+
+    public Table getTable(String name) throws NoSuchElementException {
+        return _tables.get(new Name(name));
     }
 }

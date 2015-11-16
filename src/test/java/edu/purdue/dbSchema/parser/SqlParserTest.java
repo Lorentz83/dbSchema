@@ -37,9 +37,9 @@ public class SqlParserTest {
     @Test
     public void parse_grant() throws Exception {
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
-        p.parse("GRANT roleName TO userName; GRANT SELECT ON tbl.col TO usr");
+        p.parse("GRANT roleName TO userName; GRANT SELECT ON tbl.col TO usr; GRANT UPDATE ON tbl.col2 TO usr2");
         List<Grant> grants = p.getGrants();
-        assertThat(grants, contains(new Grant("roleName", "userName"), new Grant(Grant.Type.READ, "usr", "tbl", "col")));
+        assertThat(grants, contains(new Grant("roleName", "userName"), new Grant(Grant.Type.READ, "usr", "tbl", "col"), new Grant(Grant.Type.WRITE, "usr2", "tbl", "col2")));
     }
 
     @Test
@@ -121,13 +121,13 @@ public class SqlParserTest {
 
         query = queries.get(0);
         assertThat(query.type, is(DlmQueryType.SELECT));
-        assertThat(query.where, is(2));
+        assertThat(query.whereColumns, contains(new StringPair("", "a"), new StringPair("", "b"), new StringPair("tbl1", "a"), new StringPair("tbl2", "b")));
         assertThat(query.mainColumns, contains(new StringPair("", "*"), new StringPair("a", "f1")));
         assertThat(query.from, contains(new StringPair("tbl1", ""), new StringPair("tbl2", "t2"), new StringPair("tbl3", "")));
 
         query = queries.get(1);
         assertThat(query.type, is(DlmQueryType.SELECT));
-        assertThat(query.where, is(1));
+        assertThat(query.whereColumns, contains(new StringPair("", "a")));
         assertThat(query.mainColumns, contains(new StringPair("", "*"), new StringPair("tblA", "col1")));
         assertThat(query.from, contains(new StringPair("tbl1", "tb1"), new StringPair("tbl2", "tblA")));
 
@@ -166,7 +166,7 @@ public class SqlParserTest {
     @Test
     public void parse_Delete() throws Exception {
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
-        p.parse("DELETE from tbl1 WHERE c > 10");
+        p.parse("DELETE from tbl1 WHERE tbl1.c > 10");
         List<ParsedQuery> queries = p.getDmlQueries();
 
         assertThat(queries, hasSize(1));
@@ -174,7 +174,7 @@ public class SqlParserTest {
 
         assertThat(query.type, is(DlmQueryType.DELETE));
         assertThat(query.from, contains(new StringPair("tbl1", "")));
-        assertThat(query.where, is(1));
+        assertThat(query.whereColumns, contains(new StringPair("tbl1", "c")));
         assertThat(query.mainColumns, hasSize(0));
     }
 
@@ -190,6 +190,6 @@ public class SqlParserTest {
         assertThat(query.type, is(DlmQueryType.UPDATE));
         assertThat(query.mainColumns, contains(new StringPair("", "c1"), new StringPair("", "c2")));
         assertThat(query.from, contains(new StringPair("tbl1", "")));
-        assertThat(query.where, is(1));
+        assertThat(query.whereColumns, contains(new StringPair("", "c2")));
     }
 }

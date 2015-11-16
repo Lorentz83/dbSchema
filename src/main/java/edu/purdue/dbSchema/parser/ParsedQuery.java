@@ -17,27 +17,28 @@ public class ParsedQuery {
      * The query type.
      */
     public final DlmQueryType type;
+
     /**
      * Contains the main columns of a query. The columns returned by a select,
      * updated by an update or inserted by an insert. The format is (table name,
      * column name), whenever the table name is not specified it is an empty
      * string.
      */
-    public List<StringPair> mainColumns = new ArrayList<StringPair>();
+    public List<StringPair> mainColumns = new ArrayList<>();
 
     /**
      * The tables that appear in the from clause, or the one from which rows are
      * removed, inserted or updated. The format is (table name, table alias)
      * where if alias misses is an empty string.
      */
-    public List<StringPair> from = new ArrayList<StringPair>();
+    public List<StringPair> from = new ArrayList<>();
 
     /**
-     * Counts the where clause.
-     *
-     * TODO improve this.
+     * Contains the columns touched by a where or join clause. The format is
+     * (table name, column name), whenever the table name is not specified it is
+     * an empty string.
      */
-    public int where = 0;
+    public List<StringPair> whereColumns = new ArrayList<>();
 
     /**
      * Creates a ParsedQyery with the specific type.
@@ -68,6 +69,16 @@ public class ParsedQuery {
         mainColumns.add(new StringPair(table, colName));
     }
 
+    public void addWhereColumn(String table, String colName) throws IllegalArgumentException, NullPointerException {
+        if (table == null || colName == null) {
+            throw new NullPointerException();
+        }
+        if (colName.isEmpty()) {
+            throw new IllegalArgumentException("Missing column name");
+        }
+        whereColumns.add(new StringPair(table, colName));
+    }
+
     /**
      * Adds a table used in the query name.
      *
@@ -86,7 +97,4 @@ public class ParsedQuery {
         from.add(new StringPair(table, alias));
     }
 
-    public void addWhere() {
-        where++;
-    }
 }

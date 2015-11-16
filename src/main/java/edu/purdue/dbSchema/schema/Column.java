@@ -90,4 +90,13 @@ public class Column implements Serializable {
         return this == obj;
     }
 
+    /**
+     * Returns the table this column belongs.
+     *
+     * @return a table.
+     */
+    public Table getTable() {
+        return _table;
+    }
+
 }

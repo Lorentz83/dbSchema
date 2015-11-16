@@ -36,7 +36,9 @@ import java.util.regex.Pattern;
 /**
  * Is an high level parser. This class wraps the real SQL parser exposing a
  * higher level APIs which parse only a subset of SQL returning a summary of the
- * features required by this project.
+ * features required by this project. Note: this class is not thread safe and it
+ * is not meant to be, even if it can be reused to parse multiple queries, a
+ * better approach is to create a new instance for every query to parse.
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
@@ -158,6 +160,7 @@ public class SqlParser {
                 break;
             case sstGrant:
             case sstoraclegrant:
+            case sstpostgresqlGrant:
                 Grant grant = analyzeGrantStmt(stmt);
                 _grants.add(grant);
                 break;
@@ -250,59 +253,31 @@ public class SqlParser {
                         tableAlias = (join.getTable().getAliasClause() != null) ? join.getTable().getAliasClause().toString() : "";
                         tableName = join.getTable().toString();
                         query.addFrom(tableName, tableAlias);
-                        System.out.printf("table: %s, alias: %s\n", tableName, tableAlias);
                         break;
                     case TBaseType.join_source_table:
                         tableAlias = (join.getTable().getAliasClause() != null) ? join.getTable().getAliasClause().toString() : "";
                         tableName = join.getTable().toString();
                         query.addFrom(tableName, tableAlias);
-                        System.out.printf("table: %s, alias: %s\n", join.getTable().toString(), (join.getTable().getAliasClause() != null) ? join.getTable().getAliasClause().toString() : "");
                         for (int j = 0; j < join.getJoinItems().size(); j++) {
                             TJoinItem joinItem = join.getJoinItems().getJoinItem(j);
-                            System.out.printf("Join type: %s\n", joinItem.getJoinType().toString());
                             tableAlias = (joinItem.getTable().getAliasClause() != null) ? joinItem.getTable().getAliasClause().toString() : "";
                             tableName = joinItem.getTable().toString();
                             query.addFrom(tableName, tableAlias);
-                            System.out.printf("table: %s, alias: %s\n", tableName, tableAlias);
 
                             if (joinItem.getOnCondition() != null) {
-                                System.out.printf("On: %s\n", joinItem.getOnCondition().toString());
-                                query.addWhere();
+                                evaluateWhereConditions(joinItem.getOnCondition(), query);
                             } else if (joinItem.getUsingColumns() != null) {
-                                System.out.printf("using: %s\n", joinItem.getUsingColumns().toString());
-                                query.addWhere();
+                                TObjectNameList colList = joinItem.getUsingColumns();
+                                for (int n = 0; n < colList.size(); n++) {
+                                    TObjectName colName = colList.getObjectName(n);
+                                    query.addWhereColumn(colName.getTableString(), colName.getColumnNameOnly());
+                                }
                             }
                         }
                         break;
                     case TBaseType.join_source_join:
                         //select from another query
                         throw new UnsupportedSqlException("unsuppported neasted query");
-//                        TJoin source_join = join.getJoin();
-//                        System.out.printf("table: %s, alias: %s\n", source_join.getTable().toString(), (source_join.getTable().getAliasClause() != null) ? source_join.getTable().getAliasClause().toString() : "");
-//
-//                        for (int j = 0; j < source_join.getJoinItems().size(); j++) {
-//                            TJoinItem joinItem = source_join.getJoinItems().getJoinItem(j);
-//                            System.out.printf("source_join type: %s\n", joinItem.getJoinType().toString());
-//                            System.out.printf("table: %s, alias: %s\n", joinItem.getTable().toString(), (joinItem.getTable().getAliasClause() != null) ? joinItem.getTable().getAliasClause().toString() : "");
-//                            if (joinItem.getOnCondition() != null) {
-//                                System.out.printf("On: %s\n", joinItem.getOnCondition().toString());
-//                            } else if (joinItem.getUsingColumns() != null) {
-//                                System.out.printf("using: %s\n", joinItem.getUsingColumns().toString());
-//                            }
-//                        }
-//
-//                        for (int j = 0; j < join.getJoinItems().size(); j++) {
-//                            TJoinItem joinItem = join.getJoinItems().getJoinItem(j);
-//                            System.out.printf("Join type: %s\n", joinItem.getJoinType().toString());
-//                            System.out.printf("table: %s, alias: %s\n", joinItem.getTable().toString(), (joinItem.getTable().getAliasClause() != null) ? joinItem.getTable().getAliasClause().toString() : "");
-//                            if (joinItem.getOnCondition() != null) {
-//                                System.out.printf("On: %s\n", joinItem.getOnCondition().toString());
-//                            } else if (joinItem.getUsingColumns() != null) {
-//                                System.out.printf("using: %s\n", joinItem.getUsingColumns().toString());
-//                            }
-//                        }
-//
-//                        break;
                     default:
                         throw new UnsupportedSqlException("unknown type in join!");
                 }
@@ -332,33 +307,36 @@ public class SqlParser {
     private void parseWhere(ParsedQuery query, TWhereClause where) throws UnsupportedSqlException {
         if (where != null) {
             TExpression conds = where.getCondition();
-            countWhereConditions(conds, query);
-            System.out.printf("where clause: \n%s\n", where.toString());
+            evaluateWhereConditions(conds, query);
         }
     }
 
-    private void countWhereConditions(TExpression conds, ParsedQuery query) throws UnsupportedSqlException {
+    private void evaluateWhereConditions(TExpression conds, ParsedQuery query) throws UnsupportedSqlException {
         EExpressionType expressionType = conds.getExpressionType();
         switch (expressionType) {
             case subquery_t:
                 throw new UnsupportedSqlException("unsupported neasted query " + conds.toString());
             case logical_not_t:
             case parenthesis_t:
-                countWhereConditions(conds.getLeftOperand(), query);
+                evaluateWhereConditions(conds.getLeftOperand(), query);
                 break;
             case logical_and_t:
             case logical_or_t:
             case logical_xor_t:
-                countWhereConditions(conds.getLeftOperand(), query);
-                countWhereConditions(conds.getRightOperand(), query);
-                break;
             case simple_comparison_t: // f_id [ = > < ... ] '340867051503681675'
             case in_t: // f_arrive_ap_id in ('211')
-                query.addWhere();
+                evaluateWhereConditions(conds.getLeftOperand(), query);
+                evaluateWhereConditions(conds.getRightOperand(), query);
+                break;
+            case simple_object_name_t:
+                TObjectName colName = conds.getObjectOperand();
+                query.addWhereColumn(colName.getTableString(), colName.getColumnNameOnly());
+                break;
+            case simple_constant_t: // nothing to do, it is a constant
+            case list_t: //nothing to do, it is a list
                 break;
             default:
                 LOGGER.log(Level.WARNING, "Unknown expression type: {0}, found in: {1}", new Object[]{expressionType.toString(), conds.toString()});
-                query.addWhere();
         }
     }
 
@@ -392,8 +370,9 @@ public class SqlParser {
                     break;
                 case "INSERT":
                 case "UPDATE":
+                case "DELETE":
                 case "REFERENCES":
-                    type = Grant.Type.READ;
+                    type = Grant.Type.WRITE;
                     break;
                 default:
                     throw new SqlParseException("Cannot recognize the privilege '%s' in the grant statement '%s'", what, grantStr);

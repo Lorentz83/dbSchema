@@ -87,7 +87,7 @@ public class DbGrantsTest {
             _grants.enforceWrite(new Name("user1"), collection(_col1));
             fail("missing exception");
         } catch (UnauthorizedSqlException ex) {
-            assertThat(ex.getMessage(), is("the user 'user1' has no right to read 'id'"));
+            assertThat(ex.getMessage(), is("the user 'user1' has no right to write 'id'"));
         }
     }
 

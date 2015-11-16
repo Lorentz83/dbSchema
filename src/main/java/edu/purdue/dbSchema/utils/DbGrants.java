@@ -54,12 +54,12 @@ public class DbGrants implements IDbGrants {
         return null;
     }
 
-    private Set<Name> enforce(IMapSet<Column, Name> grant, Name username, Collection<Column> columns) throws NullPointerException, UnauthorizedSqlException {
+    private Set<Name> enforce(IMapSet<Column, Name> grant, Name username, Collection<Column> columns, String errorMsg) throws NullPointerException, UnauthorizedSqlException {
         Set<Name> usedRoles = new HashSet<>();
         for (Column col : columns) {
             Name role = hasGrant(grant, username, col);
             if (role == null) {
-                throw new UnauthorizedSqlException("the user '%s' has no right to read '%s'", username, col.getName());
+                throw new UnauthorizedSqlException("the user '%s' has no right to %s '%s'", username, errorMsg, col.getName());
             }
             usedRoles.add(role);
         }
@@ -68,12 +68,12 @@ public class DbGrants implements IDbGrants {
 
     @Override
     public Set<Name> enforceWrite(Name username, Collection<Column> columns) throws NullPointerException, UnauthorizedSqlException {
-        return enforce(_grantWrite, username, columns);
+        return enforce(_grantWrite, username, columns, "write");
     }
 
     @Override
     public Set<Name> enforceRead(Name username, Collection<Column> columns) throws NullPointerException, UnauthorizedSqlException {
-        return enforce(_grantRead, username, columns);
+        return enforce(_grantRead, username, columns, "read");
     }
 
 }
