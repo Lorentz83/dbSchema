@@ -1,5 +1,6 @@
 package edu.purdue.dbSchema.parser;
 
+import edu.purdue.dbSchema.schema.Name;
 import java.util.Objects;
 
 /**
@@ -28,10 +29,10 @@ public class Grant {
         ROLE
     };
 
-    private final String _to;
-    private final String _role;
-    private final String _table;
-    private final String _column;
+    private final Name _to;
+    private final Name _role;
+    private final Name _table;
+    private final Name _column;
     private final Type _type;
 
     /**
@@ -43,12 +44,8 @@ public class Grant {
      * @throws IllegalArgumentException if role or to are empty.
      */
     public Grant(String role, String to) throws NullPointerException, IllegalArgumentException {
-        if (role.isEmpty() || to.isEmpty()) {
-            throw new IllegalArgumentException();
-        }
-
-        _to = to;
-        _role = role;
+        _to = new Name(to);
+        _role = new Name(role);
         _type = Type.ROLE;
         _table = null;
         _column = null;
@@ -66,14 +63,14 @@ public class Grant {
      * empty.
      */
     public Grant(Type type, String to, String table, String column) throws IllegalArgumentException, NullPointerException {
-        _to = to;
+        _to = new Name(to);
         _role = null;
         if (type == Type.ROLE || to.isEmpty() || table.isEmpty()) {
             throw new IllegalArgumentException("Cannot grant both to role and table");
         }
         _type = type;
-        _table = table;
-        _column = column;
+        _table = new Name(table);
+        _column = column.isEmpty() ? null : new Name(column);
     }
 
     /**
@@ -81,7 +78,7 @@ public class Grant {
      *
      * @return a never empty string.
      */
-    public String getTo() {
+    public Name getTo() {
         return _to;
     }
 
@@ -90,7 +87,7 @@ public class Grant {
      *
      * @return the role of null if type is not ROLE.
      */
-    public String getRole() {
+    public Name getRole() {
         return _role;
     }
 
@@ -99,17 +96,17 @@ public class Grant {
      *
      * @return the table name or null if type is ROLE.
      */
-    public String getTable() {
+    public Name getTable() {
         return _table;
     }
 
     /**
      * Returns the column name which is granted.
      *
-     * @return the column name, empty string if all the columns are granted or
-     * null if type is ROLE.
+     * @return the column name, null if all the columns are granted or type is
+     * ROLE.
      */
-    public String getColumn() {
+    public Name getColumn() {
         return _column;
     }
 

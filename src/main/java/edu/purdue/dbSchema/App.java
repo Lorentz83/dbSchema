@@ -45,6 +45,8 @@ public class App {
                     System.out.println(t.toString());
                 }
                 break;
+            default:
+                System.err.println("Unknown parameter " + args[1]);
         }
 
     }
@@ -60,7 +62,7 @@ public class App {
                 ObjectOutputStream o = new ObjectOutputStream(new FileOutputStream(dbStorage))) {
             scanner.useDelimiter(";");
             while (scanner.hasNext()) {
-                String createTable = scanner.next().toLowerCase().trim();
+                String createTable = scanner.next().trim();
                 try {
                     db.parse(createTable);
                 } catch (SqlParseException | UnsupportedSqlException | SqlSemanticException ex) {
@@ -86,7 +88,6 @@ public class App {
         try (BufferedReader bin = new BufferedReader(new InputStreamReader(in))) {
             while ((line = bin.readLine()) != null) {
                 try {
-                    line = line.toLowerCase();
                     db.parse(line);
                     System.out.println("Parsing " + line + "ok");
                 } catch (SqlParseException | UnsupportedSqlException | SqlSemanticException ex) {

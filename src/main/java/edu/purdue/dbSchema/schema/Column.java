@@ -11,7 +11,7 @@ import java.io.Serializable;
  */
 public class Column implements Serializable {
 
-    private final String _name;
+    private final Name _name;
     private final String _type;
     private final boolean _notNull;
     private final boolean _unique;
@@ -28,11 +28,11 @@ public class Column implements Serializable {
      * @throws NullPointerException if name or type are null.
      * @throws IllegalArgumentException if name or type are empty.
      */
-    Column(String name, String type, boolean notNull, boolean unique, Table table) throws NullPointerException, IllegalArgumentException {
+    Column(Name name, String type, boolean notNull, boolean unique, Table table) throws NullPointerException, IllegalArgumentException {
         if (name == null || type == null) {
             throw new NullPointerException("name or type");
         }
-        if (name.isEmpty() || type.isEmpty()) {
+        if (type.isEmpty()) {
             throw new IllegalArgumentException("name or type");
         }
         _name = name;
@@ -42,7 +42,7 @@ public class Column implements Serializable {
         _table = table;
     }
 
-    public String getName() {
+    public Name getName() {
         return _name;
     }
 

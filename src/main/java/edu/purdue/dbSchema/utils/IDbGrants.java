@@ -3,6 +3,7 @@ package edu.purdue.dbSchema.utils;
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
 import edu.purdue.dbSchema.schema.Column;
+import edu.purdue.dbSchema.schema.Name;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
@@ -26,7 +27,7 @@ public interface IDbGrants extends Serializable {
      * @throws edu.purdue.dbSchema.erros.SqlSemanticException if the new role
      * would add a circular reference.
      */
-    public void grantRole(String role, String to) throws NullPointerException, SqlSemanticException;
+    public void grantRole(Name role, Name to) throws NullPointerException, SqlSemanticException;
 
     /**
      * Grants the read permission of one column to a role.
@@ -36,7 +37,7 @@ public interface IDbGrants extends Serializable {
      * @return true if the grant was not already present.
      * @throws NullPointerException if a parameter is null.
      */
-    public boolean grantRead(Column column, String to) throws NullPointerException;
+    public boolean grantRead(Column column, Name to) throws NullPointerException;
 
     /**
      * Grants the write permission of one column to a role.
@@ -46,7 +47,7 @@ public interface IDbGrants extends Serializable {
      * @return true if the grant was not already present.
      * @throws NullPointerException if a parameter is null.
      */
-    public boolean grantWrite(Column column, String to) throws NullPointerException;
+    public boolean grantWrite(Column column, Name to) throws NullPointerException;
 
     /**
      * Checks if a user can read a set of columns.
@@ -58,7 +59,7 @@ public interface IDbGrants extends Serializable {
      * @throws UnauthorizedSqlException if the user has no permission to read
      * all the columns.
      */
-    public Set<String> enforceRead(String username, Collection<Column> columns) throws NullPointerException, UnauthorizedSqlException;
+    public Set<Name> enforceRead(Name username, Collection<Column> columns) throws NullPointerException, UnauthorizedSqlException;
 
     /**
      * Checks if a user can write a set of columns.
@@ -70,6 +71,6 @@ public interface IDbGrants extends Serializable {
      * @throws UnauthorizedSqlException if the user has no permission to write
      * all the columns.
      */
-    public Set<String> enforceWrite(String username, Collection<Column> columns) throws NullPointerException, UnauthorizedSqlException;
+    public Set<Name> enforceWrite(Name username, Collection<Column> columns) throws NullPointerException, UnauthorizedSqlException;
 
 }

@@ -61,9 +61,9 @@ public class TableTest {
 
         List<Column> cols = new ArrayList(tbl.getColumns());
         assertThat(cols, hasSize(2));
-        assertThat(cols.get(0).getName(), is("name1"));
+        assertThat(cols.get(0).getName(), is(new Name("name1")));
         assertThat(cols.get(0).getType(), is("type"));
-        assertThat(cols.get(1).getName(), is("name2"));
+        assertThat(cols.get(1).getName(), is(new Name("name2")));
     }
 
     @Test
@@ -110,7 +110,7 @@ public class TableTest {
         Table tbl = new Table("name1");
         tbl.addColumn("name2", "type", true, true);
         try {
-            tbl.getColumn(null);
+            tbl.getColumn((String) null);
             fail("missing NullPointerException");
         } catch (NullPointerException ex) {
         }

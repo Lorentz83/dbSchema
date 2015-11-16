@@ -82,19 +82,19 @@ public class DatabaseEngineTest {
         Table tbl2 = _testDb.getTable("tbl2");
         _select.addFrom("tbl1", "");
         _select.addFrom("tbl2", "t2");
-        HashMap<String, Table> filtered = _testDb.filterTables(_select.from);
-        assertThat(filtered, hasEntry("tbl1", tbl1));
-        assertThat(filtered, hasEntry("tbl2", tbl2));
-        assertThat(filtered, hasEntry("t2", tbl2));
+        HashMap<Name, Table> filtered = _testDb.filterTables(_select.from);
+        assertThat(filtered, hasEntry(new Name("tbl1"), tbl1));
+        assertThat(filtered, hasEntry(new Name("tbl2"), tbl2));
+        assertThat(filtered, hasEntry(new Name("t2"), tbl2));
         assertThat(filtered, aMapWithSize(3));
     }
 
     @Test
     public void getSelectedColumnsMissingColumn() throws Exception {
-        HashMap<String, Table> usedTables = new HashMap<>();
+        HashMap<Name, Table> usedTables = new HashMap<>();
         Table tbl1 = new Table("tbl1").addColumn("A1", "string", false, false)
                 .addColumn("id", "int", true, true);
-        usedTables.put("tbl1", tbl1);
+        usedTables.put(new Name("tbl1"), tbl1);
         List<StringPair> selectedCols;
 
         try {
@@ -125,13 +125,13 @@ public class DatabaseEngineTest {
 
     @Test
     public void getSelectedColumnsAmbiguousColumn() throws Exception {
-        HashMap<String, Table> usedTables = new HashMap<>();
+        HashMap<Name, Table> usedTables = new HashMap<>();
         Table tbl1 = new Table("tbl1").addColumn("A1", "string", false, false)
                 .addColumn("id", "int", true, true);
         Table tbl2 = new Table("tbl2").addColumn("B1", "string", false, false)
                 .addColumn("id", "int", true, true);
-        usedTables.put("tbl1", tbl1);
-        usedTables.put("tbl2", tbl2);
+        usedTables.put(tbl1.getName(), tbl1);
+        usedTables.put(tbl2.getName(), tbl2);
         List<StringPair> selectedCols;
         try {
             selectedCols = new ArrayList<>();
@@ -145,16 +145,16 @@ public class DatabaseEngineTest {
 
     @Test
     public void getSelectedColumns() throws Exception {
-        HashMap<String, Table> usedTables = new HashMap<>();
+        HashMap<Name, Table> usedTables = new HashMap<>();
         Table tbl1 = new Table("tbl1")
                 .addColumn("A1", "string", false, false)
                 .addColumn("id", "int", true, true);
         Table tbl2 = new Table("tbl2")
                 .addColumn("B1", "string", false, false)
                 .addColumn("id", "int", true, true);
-        usedTables.put("tbl1", tbl1);
-        usedTables.put("tbl", tbl1);
-        usedTables.put("tbl2", tbl2);
+        usedTables.put(new Name("tbl1"), tbl1);
+        usedTables.put(new Name("tbl"), tbl1);
+        usedTables.put(new Name("tbl2"), tbl2);
         List<StringPair> selectedCols;
         ArrayList<Column> cols;
 
@@ -179,15 +179,15 @@ public class DatabaseEngineTest {
 
     @Test
     public void getSelectedColumnsStar() throws Exception {
-        HashMap<String, Table> usedTables = new HashMap<>();
+        HashMap<Name, Table> usedTables = new HashMap<>();
         Table tbl1 = new Table("tbl1")
                 .addColumn("A1", "string", false, false)
                 .addColumn("id", "int", true, true);
         Table tbl2 = new Table("tbl2")
                 .addColumn("B1", "string", false, false)
                 .addColumn("id", "int", true, true);
-        usedTables.put("tbl", tbl1);
-        usedTables.put("tbl2", tbl2);
+        usedTables.put(new Name("tbl"), tbl1);
+        usedTables.put(new Name("tbl2"), tbl2);
 
         ArrayList<Column> cols;
         ArrayList<StringPair> selectedCols;

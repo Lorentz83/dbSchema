@@ -3,6 +3,7 @@ package edu.purdue.dbSchema.utils;
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
 import edu.purdue.dbSchema.schema.Column;
+import edu.purdue.dbSchema.schema.Name;
 import edu.purdue.dbSchema.schema.Table;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,9 +30,9 @@ public class DbGrantsTest {
 
     @Before
     public void init() throws Exception {
-        _grants.grantRole("roleA", "user1");
-        _grants.grantRole("roleB", "user2");
-        _grants.grantRole("roleC", "roleA");
+        _grants.grantRole(new Name("roleA"), new Name("user1"));
+        _grants.grantRole(new Name("roleB"), new Name("user2"));
+        _grants.grantRole(new Name("roleC"), new Name("roleA"));
 
         _table1 = new Table("tbl1");
         _table1.addColumn("id", "type", true, true);
@@ -41,40 +42,40 @@ public class DbGrantsTest {
         _table2.addColumn("id", "type", true, true);
         _col2 = _table2.getColumn("id");
 
-        _grants.grantRead(_col1, "roleA");
-        _grants.grantWrite(_col2, "roleB");
+        _grants.grantRead(_col1, new Name("roleA"));
+        _grants.grantWrite(_col2, new Name("roleB"));
     }
 
     @Test
     public void enforceWrite() throws Exception {
-        Set<String> roles = _grants.enforceWrite("user2", collection(_col2));
-        assertThat(roles, containsInAnyOrder("roleB"));
+        Set<Name> roles = _grants.enforceWrite(new Name("user2"), collection(_col2));
+        assertThat(roles, containsInAnyOrder(new Name("roleB")));
     }
 
     @Test
     public void enforceRead() throws Exception {
-        Set<String> roles = _grants.enforceRead("user1", collection(_col1));
-        assertThat(roles, containsInAnyOrder("roleA"));
+        Set<Name> roles = _grants.enforceRead(new Name("user1"), collection(_col1));
+        assertThat(roles, containsInAnyOrder(new Name("roleA")));
     }
 
     @Test
     public void enforceRead_MultiplePermission() throws Exception {
-        _grants.grantRead(_col2, "roleC");
+        _grants.grantRead(_col2, new Name("roleC"));
 
-        Set<String> roles = _grants.enforceRead("user1", collection(_col1, _col2));
-        assertThat(roles, containsInAnyOrder("roleA", "roleC"));
+        Set<Name> roles = _grants.enforceRead(new Name("user1"), collection(_col1, _col2));
+        assertThat(roles, containsInAnyOrder(new Name("roleA"), new Name("roleC")));
     }
 
     @Test
     public void enforceRead_EmptyColumns() throws Exception {
-        Set<String> roles = _grants.enforceRead("nouser", Collections.emptyList());
+        Set<Name> roles = _grants.enforceRead(new Name("nouser"), Collections.emptyList());
         assertThat(roles, empty());
     }
 
     @Test
     public void grantRole_Throw() throws Exception {
         try {
-            _grants.grantRole("user1", "roleC");
+            _grants.grantRole(new Name("user1"), new Name("roleC"));
             fail("missing exception");
         } catch (SqlSemanticException ex) {
         }
@@ -83,7 +84,7 @@ public class DbGrantsTest {
     @Test
     public void enforceWrite_Throw() throws Exception {
         try {
-            _grants.enforceWrite("user1", collection(_col1));
+            _grants.enforceWrite(new Name("user1"), collection(_col1));
             fail("missing exception");
         } catch (UnauthorizedSqlException ex) {
             assertThat(ex.getMessage(), is("the user 'user1' has no right to read 'id'"));
@@ -93,7 +94,7 @@ public class DbGrantsTest {
     @Test
     public void enforceRead_Throw() throws Exception {
         try {
-            _grants.enforceRead("user2", collection(_col2));
+            _grants.enforceRead(new Name("user2"), collection(_col2));
             fail("missing exception");
         } catch (UnauthorizedSqlException ex) {
             assertThat(ex.getMessage(), is("the user 'user2' has no right to read 'id'"));

@@ -30,7 +30,7 @@ import java.util.function.BiConsumer;
  */
 public class DatabaseEngine implements Serializable {
 
-    private final Map<String, Table> _tables;
+    private final Map<Name, Table> _tables;
     private final IDbGrants _grants;
     private final EDbVendor _dbVendor;
 
@@ -43,9 +43,10 @@ public class DatabaseEngine implements Serializable {
         _grants = new DbGrants();
     }
 
-    public Set<String> parse(String sql, String username) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, UnauthorizedSqlException {
+    public Set<Name> parse(String sql, String username) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, UnauthorizedSqlException {
+        Name normalizedName = new Name(username);
         SqlParser parser = new SqlParser(_dbVendor);
-        Set<String> usedRoles = new HashSet<>();
+        Set<Name> usedRoles = new HashSet<>();
 
         int ret = parser.parse(sql);
         List<ParsedQuery> queries = parser.getDmlQueries();
@@ -57,7 +58,7 @@ public class DatabaseEngine implements Serializable {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
             List<Column> cols = evaluateSelect(q);
-            usedRoles.addAll(_grants.enforceRead(username, cols));
+            usedRoles.addAll(_grants.enforceRead(normalizedName, cols));
         }
         return usedRoles;
     }
@@ -89,7 +90,7 @@ public class DatabaseEngine implements Serializable {
         if (parsed.type != DlmQueryType.SELECT) {
             throw new IllegalArgumentException("expected select got " + parsed.type);
         }
-        HashMap<String, Table> usedTables = filterTables(parsed.from);
+        HashMap<Name, Table> usedTables = filterTables(parsed.from);
         return getSelectedColumns(usedTables, parsed.mainColumns);
     }
 
@@ -103,7 +104,7 @@ public class DatabaseEngine implements Serializable {
      * @throws SqlSemanticException if a column is referenced more than once, if
      * a column name is ambiguous or if a column reference a missing table
      */
-    protected static ArrayList<Column> getSelectedColumns(final HashMap<String, Table> usedTables, final List<StringPair> selectedCols) throws SqlSemanticException {
+    protected static ArrayList<Column> getSelectedColumns(final HashMap<Name, Table> usedTables, final List<StringPair> selectedCols) throws SqlSemanticException {
         ArrayList<Column> usedCols = new ArrayList<>();
         for (StringPair select : selectedCols) {
             String tblName = select.first; //may be empty
@@ -132,7 +133,7 @@ public class DatabaseEngine implements Serializable {
                     throw new SqlSemanticException("column reference '%s' is ambiguous", colName);
                 }
             } else { // we know the table to search
-                selectedTable = usedTables.get(tblName);
+                selectedTable = usedTables.get(new Name(tblName));
                 if (selectedTable == null) {
                     throw new SqlSemanticException("missing FROM-clause entry for table '%s'", tblName);
                 }
@@ -158,10 +159,10 @@ public class DatabaseEngine implements Serializable {
      * @throws SqlSemanticException if a table does not exists in the db or a
      * table is specified more than once.
      */
-    protected HashMap<String, Table> filterTables(List<StringPair> tableNames) throws SqlSemanticException {
-        HashMap<String, Table> usedTables = new HashMap<>();
+    protected HashMap<Name, Table> filterTables(List<StringPair> tableNames) throws SqlSemanticException {
+        HashMap<Name, Table> usedTables = new HashMap<>();
         for (StringPair from : tableNames) {
-            final String name = from.first;
+            final Name name = new Name(from.first);
             final String alias = from.second;
 
             Table t = _tables.get(name);
@@ -172,7 +173,7 @@ public class DatabaseEngine implements Serializable {
                 throw new SqlSemanticException("table name '%s' specified more than once", name);
             }
             if (!alias.isEmpty()) { // add the alias
-                if (usedTables.put(alias, t) != null) {
+                if (usedTables.put(new Name(alias), t) != null) {
                     throw new SqlSemanticException("table name '%s' specified more than once", alias);
                 }
             }
@@ -181,10 +182,7 @@ public class DatabaseEngine implements Serializable {
     }
 
     public Table getTable(String name) throws NoSuchElementException {
-        if (name.isEmpty()) {
-            throw new IllegalArgumentException("empty name");
-        }
-        return _tables.get(name);
+        return _tables.get(new Name(name));
     }
 
     protected void evaluateGrantToRole(Grant g) throws UnsupportedSqlException, SqlSemanticException {
@@ -194,9 +192,9 @@ public class DatabaseEngine implements Serializable {
         _grants.grantRole(g.getRole(), g.getTo());
     }
 
-    protected void evaluateGrantToTable(Grant g) throws SqlSemanticException {
-        BiConsumer<Column, String> addGrant;
-        switch (g.getType()) {
+    protected void evaluateGrantToTable(Grant grant) throws SqlSemanticException {
+        BiConsumer<Column, Name> addGrant;
+        switch (grant.getType()) {
             case READ:
                 addGrant = (col, role) -> _grants.grantRead(col, role);
                 break;
@@ -207,25 +205,25 @@ public class DatabaseEngine implements Serializable {
                 throw new IllegalArgumentException("not a grant to table");
         }
 
-        Table table = _tables.get(g.getTable());
+        Table table = _tables.get(grant.getTable());
         if (table == null) {
-            throw new SqlSemanticException("relation '%s' does not exist", g.getTable());
+            throw new SqlSemanticException("relation '%s' does not exist", grant.getTable());
         }
 
-        final String colName = g.getColumn();
+        final Name colName = grant.getColumn();
         Collection<Column> colsToGrant;
-        if (colName.isEmpty()) {
+        if (colName == null) {
             colsToGrant = table.getColumns();
         } else {
             Column col = table.getColumn(colName);
             if (col == null) {
-                throw new SqlSemanticException("column '%s' does not exist in table '%s'", colName, g.getTable());
+                throw new SqlSemanticException("column '%s' does not exist in table '%s'", colName, grant.getTable());
             }
             colsToGrant = new ArrayList<>();
             colsToGrant.add(col);
         }
         for (Column col : colsToGrant) {
-            addGrant.accept(col, g.getTo());
+            addGrant.accept(col, grant.getTo());
         }
     }
 

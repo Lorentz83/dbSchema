@@ -20,17 +20,13 @@ public class ColumnTest {
         } catch (NullPointerException e) {
         }
         try {
-            col = new Column("asd", null, false, false, null);
+            col = new Column(new Name("asd"), null, false, false, null);
             fail("Missing NullPointerExceptio");
         } catch (NullPointerException e) {
         }
+
         try {
-            col = new Column("", "asd", false, false, null);
-            fail("Missing IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-        }
-        try {
-            col = new Column("asd", "", false, false, null);
+            col = new Column(new Name(""), "", false, false, null);
             fail("Missing IllegalArgumentException");
         } catch (IllegalArgumentException e) {
         }
@@ -38,8 +34,8 @@ public class ColumnTest {
 
     @Test
     public void equalsChecksInstances() {
-        Column col = new Column("colName", "type", true, true, null);
-        Column sameCol = new Column("colName", "type", true, true, null);
+        Column col = new Column(new Name("colName"), "type", true, true, null);
+        Column sameCol = new Column(new Name("colName"), "type", true, true, null);
 
         assertThat(col.equals(sameCol), is(false));
         assertThat(col.equals(col), is(true));

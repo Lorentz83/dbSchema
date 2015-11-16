@@ -14,8 +14,8 @@ import java.util.TreeMap;
  */
 public class Table implements Serializable {
 
-    private final String _name;
-    private final Map<String, Column> _cols;
+    private final Name _name;
+    private final Map<Name, Column> _cols;
 
     /**
      * Creates a table with the specified name.
@@ -23,14 +23,8 @@ public class Table implements Serializable {
      * @param name the table name.
      */
     public Table(String name) {
-        if (name == null) {
-            throw new NullPointerException("name");
-        }
-        if (name.isEmpty()) {
-            throw new IllegalArgumentException("name");
-        }
-        _name = name;
-        _cols = new TreeMap<String, Column>();
+        _name = new Name(name);
+        _cols = new TreeMap<>();
     }
 
     /**
@@ -47,11 +41,12 @@ public class Table implements Serializable {
      * @throws IllegalArgumentException if name or type are empty.
      */
     public Table addColumn(String name, String type, boolean notNull, boolean unique) throws SqlSemanticException, NullPointerException, IllegalAccessError {
-        if (_cols.containsKey(name)) {
+        Name normalizedName = new Name(name);
+        if (_cols.containsKey(normalizedName)) {
             throw new SqlSemanticException("column '%s' specified more than once", name);
         }
-        Column col = new Column(name, type, notNull, unique, this);
-        _cols.put(name, col);
+        Column col = new Column(normalizedName, type, notNull, unique, this);
+        _cols.put(normalizedName, col);
         return this;
     }
 
@@ -60,7 +55,7 @@ public class Table implements Serializable {
      *
      * @return the table name.
      */
-    public String getName() {
+    public Name getName() {
         return _name;
     }
 
@@ -109,11 +104,23 @@ public class Table implements Serializable {
      * @throws NullPointerException if name is null.
      * @throws IllegalArgumentException if name is empty.
      */
-    public Column getColumn(String name) throws IllegalArgumentException, NullPointerException {
-        if (name.isEmpty()) {
-            throw new IllegalArgumentException();
+    public Column getColumn(Name name) throws IllegalArgumentException, NullPointerException {
+        if (name == null) {
+            throw new NullPointerException();
         }
         return _cols.get(name);
     }
 
+    /**
+     * Convenience method for {@link #getColumn(edu.purdue.dbSchema.schema.Name)
+     * } which converts the string to the Name.
+     *
+     * @param name the column name.
+     * @return the selected column or null if it does not exists.
+     * @throws NullPointerException if name is null.
+     * @throws IllegalArgumentException if name is empty.
+     */
+    public Column getColumn(String name) throws IllegalArgumentException, NullPointerException {
+        return getColumn(new Name(name));
+    }
 }
