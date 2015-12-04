@@ -171,6 +171,7 @@ public class DatabaseEngine implements Serializable {
      */
     protected HashMap<Name, Table> filterTables(List<StringPair> tableNames) throws SqlSemanticException {
         HashMap<Name, Table> usedTables = new HashMap<>();
+        HashSet<Name> tablesWithAlias = new HashSet<>();
         for (StringPair from : tableNames) {
             final Name name = new Name(from.first);
             final String alias = from.second;
@@ -180,12 +181,18 @@ public class DatabaseEngine implements Serializable {
                 throw new SqlSemanticException("relation '%s' does not exist", name);
             }
             if (usedTables.put(name, t) != null) {
-                throw new SqlSemanticException("table name '%s' specified more than once", name);
+                if (tablesWithAlias.contains(name)) {
+                    tablesWithAlias.remove(name);
+                    usedTables.remove(name);
+                } else {
+                    throw new SqlSemanticException("table name '%s' specified more than once", name);
+                }
             }
             if (!alias.isEmpty()) { // add the alias
                 if (usedTables.put(new Name(alias), t) != null) {
                     throw new SqlSemanticException("table name '%s' specified more than once", alias);
                 }
+                tablesWithAlias.add(name);
             }
         }
         return usedTables;

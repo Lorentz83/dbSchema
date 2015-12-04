@@ -4,6 +4,7 @@ import edu.purdue.dbSchema.erros.SqlParseException;
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
 import edu.purdue.dbSchema.erros.UnsupportedSqlException;
+import edu.purdue.dbSchema.schema.Column;
 import edu.purdue.dbSchema.schema.DatabaseEngine;
 import edu.purdue.dbSchema.schema.QueryFeature;
 import edu.purdue.dbSchema.schema.Table;
@@ -16,6 +17,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.LogManager;
@@ -46,7 +48,17 @@ public class App {
             case "--info":
                 db = readDb(dbFileName);
                 for (Table t : db.getTables()) {
-                    System.out.println(t.toString());
+                    System.out.print(t.getName().normalize());
+                    System.out.print(':');
+                    Collection<Column> cols = t.getColumns();
+                    int n = 0;
+                    for (Column c : cols) {
+                        System.out.print(c.getName().normalize());
+                        if (++n < cols.size()) {
+                            System.out.print(',');
+                        }
+                    }
+                    System.out.println();
                 }
                 break;
             default:

@@ -124,7 +124,7 @@ public class SqlParser {
         TGSqlParser sqlparser = new TGSqlParser(_dbVendor);
         sqlparser.setSqltext(sql);
         if (sqlparser.parse() != 0) {
-            throw new SqlParseException("Errors: %s; Error message:", sqlparser.getErrorCount(), sqlparser.getErrormessage());
+            throw new SqlParseException("Errors: %s; Error message: %s", sqlparser.getErrorCount(), sqlparser.getErrormessage());
         }
 
         int stmNum = sqlparser.sqlstatements.size();
@@ -216,9 +216,16 @@ public class SqlParser {
         } else { // if it is not a col name, go recursively
             TFunctionCall functionCall = expression.getFunctionCall();
             if (functionCall != null) { //this is a function call i.e. sum(tbl)
-                TExpressionList args = functionCall.getArgs();
-                for (int j = 0; j < args.size(); j++) {
-                    addColumnsName(args.getExpression(j), query);
+                switch (functionCall.getFunctionType()) {
+                    case cast_t:
+                    case extract_t:
+                        addColumnsName(functionCall.getExpr1(), query);
+                        break;
+                    default:
+                        TExpressionList args = functionCall.getArgs();
+                        for (int j = 0; j < args.size(); j++) {
+                            addColumnsName(args.getExpression(j), query);
+                        }
                 }
             }
             // in case of unary or binay expressions i.e. -col or col1 + col2
@@ -323,6 +330,11 @@ public class SqlParser {
             case logical_and_t:
             case logical_or_t:
             case logical_xor_t:
+            case arithmetic_minus_t:
+            case arithmetic_plus_t:
+            case arithmetic_modulo_t:
+            case arithmetic_divide_t:
+            case arithmetic_times_t:
             case simple_comparison_t: // f_id [ = > < ... ] '340867051503681675'
             case in_t: // f_arrive_ap_id in ('211')
                 evaluateWhereConditions(conds.getLeftOperand(), query);

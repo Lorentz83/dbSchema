@@ -192,4 +192,20 @@ public class SqlParserTest {
         assertThat(query.from, contains(new StringPair("tbl1", "")));
         assertThat(query.whereColumns, contains(new StringPair("", "c2")));
     }
+
+    @Test
+    public void parse_DbSpecialFunctions() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvpostgresql);
+        p.parse("select cast(F_SEATS_LEFT as float)/F_SEATS_TOTAL*100 as seats, extract(\"month\" from F_ARRIVE_TIME) as month FROM table");
+
+        List<ParsedQuery> queries = p.getDmlQueries();
+
+        ParsedQuery query = queries.get(0);
+
+        assertThat(query.mainColumns, contains(
+                new StringPair("", "F_SEATS_LEFT"),
+                new StringPair("", "F_SEATS_TOTAL"),
+                new StringPair("", "F_ARRIVE_TIME")
+        ));
+    }
 }

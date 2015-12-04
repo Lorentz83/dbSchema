@@ -66,12 +66,35 @@ public class DatabaseEngineTest {
     }
 
     @Test
-    public void filterTablesDuplicatedTableAlias() throws Exception {
+    public void filterTables_DuplicatedTableAlias() throws Exception {
         try {
-            _select.addFrom("tbl1", "");
-            _select.addFrom("tbl2", "tbl1");
+            _select.addFrom("tbl1", "t");
+            _select.addFrom("tbl2", "t");
             _testDb.filterTables(_select.from);
             fail("missing exception");
+        } catch (SqlSemanticException ex) {
+            assertThat(ex.getMessage(), is("table name 't' specified more than once"));
+        }
+    }
+
+    @Test
+    public void filterTables_SkipsSameTableDifferentAliases() throws Exception {
+        Table tbl1 = _testDb.getTable("tbl1");
+        _select.addFrom("tbl1", "t1");
+        _select.addFrom("tbl1", "t2");
+        HashMap<Name, Table> tables = _testDb.filterTables(_select.from);
+        assertThat(tables, hasEntry(new Name("t1"), tbl1));
+        assertThat(tables, hasEntry(new Name("t2"), tbl1));
+        assertThat(tables, aMapWithSize(2));
+    }
+
+    @Test
+    public void filterTables_AliasCannotOverrideTable() throws Exception {
+        _select.addFrom("tbl1", "");
+        _select.addFrom("tbl2", "tbl1");
+        try {
+            _testDb.filterTables(_select.from);
+            fail("Missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("table name 'tbl1' specified more than once"));
         }
