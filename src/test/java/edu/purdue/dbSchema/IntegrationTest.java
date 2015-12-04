@@ -35,8 +35,8 @@ public class IntegrationTest {
             }
         }
         for (Table t : db.getTables()) {
-            db.parse(String.format("GRANT SELECT ON %s TO %s", t.getName().normalize(), username));
-            db.parse(String.format("GRANT INSERT ON %s TO %s", t.getName().normalize(), username));
+            db.parse(String.format("GRANT SELECT ON %s TO %s", t.getName().getName(), username));
+            db.parse(String.format("GRANT INSERT ON %s TO %s", t.getName().getName(), username));
         }
         try (Scanner scanner = new Scanner(getClass().getClassLoader().getResourceAsStream("edu/purdue/dbSchema/testData/queries.sql"))) {
             scanner.useDelimiter(";");

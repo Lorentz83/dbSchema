@@ -196,7 +196,7 @@ public class SqlParserTest {
     @Test
     public void parse_DbSpecialFunctions() throws Exception {
         SqlParser p = new SqlParser(EDbVendor.dbvpostgresql);
-        p.parse("select cast(F_SEATS_LEFT as float)/F_SEATS_TOTAL*100 as seats, extract(\"month\" from F_ARRIVE_TIME) as month FROM table");
+        p.parse("select cast(F_SEATS_LEFT as float)/F_SEATS_TOTAL*100 as seats, extract(\"month\" from F_ARRIVE_TIME) as month, -NEGATIVE_FIELD FROM table");
 
         List<ParsedQuery> queries = p.getDmlQueries();
 
@@ -205,7 +205,8 @@ public class SqlParserTest {
         assertThat(query.mainColumns, contains(
                 new StringPair("", "F_SEATS_LEFT"),
                 new StringPair("", "F_SEATS_TOTAL"),
-                new StringPair("", "F_ARRIVE_TIME")
+                new StringPair("", "F_ARRIVE_TIME"),
+                new StringPair("", "NEGATIVE_FIELD")
         ));
     }
 }

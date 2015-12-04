@@ -1,6 +1,7 @@
 package edu.purdue.dbSchema.schema;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -67,5 +68,14 @@ public class NameTest {
         assertThat(n1.compareTo(n2), is(lessThan(0)));
         assertThat(n1.equals(n2), is(false));
 
+    }
+
+    @Test
+    public void getter() {
+        String sname = "\"TableName\"";
+        Name name = new Name(sname);
+
+        assertThat(name.getName(), is("tablename"));
+        assertThat(name.getOriginalName(), sameInstance(sname));
     }
 }

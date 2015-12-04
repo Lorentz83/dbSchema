@@ -3,7 +3,7 @@ package edu.purdue.dbSchema.schema;
 import java.io.Serializable;
 
 /**
- * Represents an object name in the database. It contains code to normalize the
+ * Represents an object name in the database. It contains code to getName the
  * names, therefore equality is case insensitive and ignores quotes.
  *
  * @author Lorenzo Bossi <lbossi@purdue.edu>
@@ -65,8 +65,21 @@ public class Name implements Comparable<Name>, Serializable {
         return _name;
     }
 
-    public String normalize() {
+    /**
+     * Returns the normalized name, without quotes and lowercase.
+     *
+     * @return the normalized name.
+     */
+    public String getName() {
         return _normalizedName;
     }
 
+    /**
+     * Returns the original name, as recorded with respect of case and quotes.
+     *
+     * @return the original name.
+     */
+    public String getOriginalName() {
+        return _name;
+    }
 }

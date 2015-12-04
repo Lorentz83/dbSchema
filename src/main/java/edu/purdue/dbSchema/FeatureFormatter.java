@@ -32,7 +32,7 @@ public class FeatureFormatter {
     void header() {
         _out.print("type" + _separator);
         for (Column c : _columns) {
-            _out.print(c.getTable().getName().normalize() + "." + c.getName().normalize() + _separator);
+            _out.print(c.getTable().getName().getName() + "." + c.getName().getName() + _separator);
         }
         _out.println();
     }

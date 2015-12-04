@@ -48,12 +48,12 @@ public class App {
             case "--info":
                 db = readDb(dbFileName);
                 for (Table t : db.getTables()) {
-                    System.out.print(t.getName().normalize());
+                    System.out.print(t.getName().getName());
                     System.out.print(':');
                     Collection<Column> cols = t.getColumns();
                     int n = 0;
                     for (Column c : cols) {
-                        System.out.print(c.getName().normalize());
+                        System.out.print(c.getName().getName());
                         if (++n < cols.size()) {
                             System.out.print(',');
                         }
@@ -86,8 +86,8 @@ public class App {
             }
 
             for (Table t : db.getTables()) {
-                db.parse(String.format("GRANT SELECT ON %s TO %s", t.getName().normalize(), username));
-                db.parse(String.format("GRANT INSERT ON %s TO %s", t.getName().normalize(), username));
+                db.parse(String.format("GRANT SELECT ON %s TO %s", t.getName().getName(), username));
+                db.parse(String.format("GRANT INSERT ON %s TO %s", t.getName().getName(), username));
             }
             o.writeObject(db);
             return db;
