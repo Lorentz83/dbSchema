@@ -101,7 +101,12 @@ public class DatabaseEngine implements Serializable {
             }
             usedRoles.addAll(_grants.enforceRead(name, where));
         }
-        return new QueryFeature(parsed.type, select, where, usedRoles);
+        QueryFeature feature = new QueryFeature(parsed.type, select, where, usedRoles);
+        if (parsed.nextCombinedQuery != null) {
+            QueryFeature feature2 = evaluateDlmQuery(parsed.nextCombinedQuery, name);
+            feature = feature.merge(feature2);
+        }
+        return feature;
     }
 
     /**

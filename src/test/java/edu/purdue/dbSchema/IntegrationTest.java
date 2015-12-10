@@ -95,7 +95,7 @@ public class IntegrationTest {
 
         String sql = "";
 
-        sql += "select al_id from \"AIRLINE\" where al_iata_code='IT' UNION select al_id from \"AIRLINE\" where al_icao_code='AKX'; ";
+        sql += "select al_name from \"AIRLINE\" where al_iata_code='IT' UNION select al_id from \"AIRLINE\" where al_icao_code='AKX'; ";
 
         List<QueryFeature> res = db.parse(sql, username);
         QueryFeature feature;
@@ -104,7 +104,7 @@ public class IntegrationTest {
 
         feature = res.get(0);
         assertThat(feature.getType(), is(DlmQueryType.SELECT));
-        assertThat(feature.getUsedCols(), containsInAnyOrder(airline.getColumn("al_id")));
+        assertThat(feature.getUsedCols(), containsInAnyOrder(airline.getColumn("al_name"), airline.getColumn("al_id")));
         assertThat(feature.getFilteredCols(), containsInAnyOrder(airline.getColumn("al_iata_code"), airline.getColumn("al_icao_code")));
     }
 

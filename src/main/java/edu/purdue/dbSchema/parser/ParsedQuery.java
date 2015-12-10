@@ -49,11 +49,22 @@ public class ParsedQuery {
     public ParsedQuery nextCombinedQuery = null;
 
     /**
-     * Contains a list of sub queries. I.e. in case of SELECT a, (SELECT ..)
-     * FROM tbl1, (SELECT ... ) as tbl2 WHERE f in (SELECT ...) this list will
-     * contain the three sub-queries. Empty if no sub-query exists.
+     * Contains a list of sub queries in the SELECT clause. Empty if no
+     * sub-query exists.
      */
-    public List<ParsedQuery> subQueries = new ArrayList<>();
+    public List<ParsedQuery> subQueriesSelect = new ArrayList<>();
+
+    /**
+     * Contains a list of sub queries in the FROM clause. Empty if no sub-query
+     * exists.
+     */
+    public List<ParsedQuery> subQueriesFrom = new ArrayList<>();
+
+    /**
+     * Contains a list of sub queries in the WHERE clause. Empty if no sub-query
+     * exists.
+     */
+    public List<ParsedQuery> subQueriesWhere = new ArrayList<>();
 
     /**
      * Creates a ParsedQyery with the specific type.

@@ -243,7 +243,7 @@ public class SqlParser {
 
             TSelectSqlStatement subQuery = expression.getSubQuery();
             if (subQuery != null) {
-                query.subQueries.add(analyzeSelectStmt(subQuery));
+                query.subQueriesSelect.add(analyzeSelectStmt(subQuery));
             }
         }
     }
@@ -343,7 +343,7 @@ public class SqlParser {
                 break;
             case subquery:
                 tableName = "";
-                query.subQueries.add(analyzeSelectStmt(table.getSubquery()));
+                query.subQueriesFrom.add(analyzeSelectStmt(table.getSubquery()));
                 break;
             default:
                 throw new UnsupportedSqlException("unsuppported table '%s' in from clause", table.toString());
@@ -363,7 +363,7 @@ public class SqlParser {
         switch (expressionType) {
             case subquery_t:
                 ParsedQuery sub = analyzeSelectStmt(conds.getSubQuery());
-                query.subQueries.add(sub);
+                query.subQueriesWhere.add(sub);
                 break;
             case logical_not_t:
             case parenthesis_t:

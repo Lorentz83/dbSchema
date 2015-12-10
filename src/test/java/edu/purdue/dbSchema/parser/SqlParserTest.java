@@ -126,17 +126,14 @@ public class SqlParserTest {
         assertThat(query.whereColumns, contains(new StringPair("", "a"), new StringPair("", "b"), new StringPair("tbl1", "a"), new StringPair("tbl2", "b")));
         assertThat(query.mainColumns, contains(new StringPair("", "*"), new StringPair("a", "f1")));
         assertThat(query.from, contains(new StringPair("tbl1", ""), new StringPair("tbl2", "t2"), new StringPair("tbl3", "")));
-        assertThat(query.nextCombinedQuery, nullValue());
-        assertThat(query.subQueries, empty());
+        assertNoSubOrCombinedQueries(query);
 
         query = queries.get(1);
         assertThat(query.type, is(DlmQueryType.SELECT));
         assertThat(query.whereColumns, contains(new StringPair("", "a")));
         assertThat(query.mainColumns, contains(new StringPair("", "*"), new StringPair("tblA", "col1")));
         assertThat(query.from, contains(new StringPair("tbl1", "tb1"), new StringPair("tbl2", "tblA")));
-        assertThat(query.nextCombinedQuery, nullValue());
-        assertThat(query.subQueries, empty());
-
+        assertNoSubOrCombinedQueries(query);
     }
 
     @Test
@@ -152,8 +149,7 @@ public class SqlParserTest {
 
         assertThat(query.mainColumns, contains(new StringPair("", "c1"), new StringPair("", "c2")));
 
-        assertThat(query.nextCombinedQuery, nullValue());
-        assertThat(query.subQueries, empty());
+        assertNoSubOrCombinedQueries(query);
     }
 
     @Test
@@ -171,8 +167,7 @@ public class SqlParserTest {
         assertThat(query.from, contains(new StringPair("tbl1", "")));
         assertThat(query.mainColumns, contains(new StringPair("", "c1"), new StringPair("", "c2")));
 
-        assertThat(query.nextCombinedQuery, nullValue());
-        assertThat(query.subQueries, empty());
+        assertNoSubOrCombinedQueries(query);
     }
 
     @Test
@@ -189,8 +184,7 @@ public class SqlParserTest {
         assertThat(query.whereColumns, contains(new StringPair("tbl1", "c")));
         assertThat(query.mainColumns, hasSize(0));
 
-        assertThat(query.nextCombinedQuery, nullValue());
-        assertThat(query.subQueries, empty());
+        assertNoSubOrCombinedQueries(query);
     }
 
     @Test
@@ -207,8 +201,7 @@ public class SqlParserTest {
         assertThat(query.from, contains(new StringPair("tbl1", "")));
         assertThat(query.whereColumns, contains(new StringPair("", "c2")));
 
-        assertThat(query.nextCombinedQuery, nullValue());
-        assertThat(query.subQueries, empty());
+        assertNoSubOrCombinedQueries(query);
     }
 
     @Test
@@ -242,7 +235,9 @@ public class SqlParserTest {
             assertThat(query.mainColumns, contains(new StringPair("", "f" + n)));
             assertThat(query.from, contains(new StringPair("t" + n, "")));
             assertThat(query.whereColumns, empty());
-            assertThat(query.subQueries, empty());
+            assertThat(query.subQueriesFrom, empty());
+            assertThat(query.subQueriesSelect, empty());
+            assertThat(query.subQueriesWhere, empty());
             query = query.nextCombinedQuery;
         }
         assertThat(query, nullValue());
@@ -262,32 +257,38 @@ public class SqlParserTest {
         assertThat(query.whereColumns, contains(new StringPair("", "f1")));
         assertThat(query.nextCombinedQuery, nullValue());
 
-        assertThat(query.subQueries, hasSize(3));
+        assertThat(query.subQueriesFrom, hasSize(1));
+        assertThat(query.subQueriesSelect, hasSize(1));
+        assertThat(query.subQueriesWhere, hasSize(1));
 
         ParsedQuery sub;
 
-        sub = query.subQueries.get(0);
+        sub = query.subQueriesSelect.get(0);
         assertThat(sub.type, is(DlmQueryType.SELECT));
         assertThat(sub.mainColumns, contains(new StringPair("", "*")));
         assertThat(sub.from, contains(new StringPair("t1", "")));
         assertThat(sub.whereColumns, contains(new StringPair("", "f1"), new StringPair("t2", "f")));
-        assertThat(sub.nextCombinedQuery, nullValue());
-        assertThat(sub.subQueries, hasSize(0));
+        assertNoSubOrCombinedQueries(sub);
 
-        sub = query.subQueries.get(1);
+        sub = query.subQueriesFrom.get(0);
         assertThat(sub.type, is(DlmQueryType.SELECT));
         assertThat(sub.mainColumns, contains(new StringPair("", "*")));
         assertThat(sub.from, contains(new StringPair("tbl3", "")));
         assertThat(sub.whereColumns, empty());
-        assertThat(sub.nextCombinedQuery, nullValue());
-        assertThat(sub.subQueries, hasSize(0));
+        assertNoSubOrCombinedQueries(sub);
 
-        sub = query.subQueries.get(2);
+        sub = query.subQueriesWhere.get(0);
         assertThat(sub.type, is(DlmQueryType.SELECT));
         assertThat(sub.mainColumns, contains(new StringPair("", "l")));
         assertThat(sub.from, contains(new StringPair("t4", "")));
         assertThat(sub.whereColumns, empty());
-        assertThat(sub.nextCombinedQuery, nullValue());
-        assertThat(sub.subQueries, hasSize(0));
+        assertNoSubOrCombinedQueries(sub);
+    }
+
+    private void assertNoSubOrCombinedQueries(ParsedQuery query) {
+        assertThat(query.subQueriesFrom, empty());
+        assertThat(query.subQueriesSelect, empty());
+        assertThat(query.subQueriesWhere, empty());
+        assertThat(query.nextCombinedQuery, nullValue());
     }
 }
