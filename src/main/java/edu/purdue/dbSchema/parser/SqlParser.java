@@ -20,6 +20,7 @@ import gudusoft.gsqlparser.nodes.TObjectName;
 import gudusoft.gsqlparser.nodes.TObjectNameList;
 import gudusoft.gsqlparser.nodes.TResultColumn;
 import gudusoft.gsqlparser.nodes.TResultColumnList;
+import gudusoft.gsqlparser.nodes.TTable;
 import gudusoft.gsqlparser.nodes.TWhereClause;
 import gudusoft.gsqlparser.stmt.TCreateTableSqlStatement;
 import gudusoft.gsqlparser.stmt.TDeleteSqlStatement;
@@ -203,7 +204,15 @@ public class SqlParser {
         return tbl;
     }
 
-    private void addColumnsName(TExpression expression, ParsedQuery query) {
+    /**
+     * Analyzes the SELECT clause and adds the columns into the ParsedQuery.
+     * Whenever a sub-query is encountered, it is recursively parsed.
+     *
+     * @param expression the expression in the SELECT clause.
+     * @param query the ParsedQuery to be constructed.
+     * @throws UnsupportedSqlException in case of error in the sub-query.
+     */
+    private void addColumnsName(TExpression expression, ParsedQuery query) throws UnsupportedSqlException {
         if (expression == null) {
             return;
         }
@@ -231,45 +240,48 @@ public class SqlParser {
             // in case of unary or binay expressions i.e. -col or col1 + col2
             addColumnsName(expression.getLeftOperand(), query);
             addColumnsName(expression.getRightOperand(), query);
+
+            TSelectSqlStatement subQuery = expression.getSubQuery();
+            if (subQuery != null) {
+                query.subQueries.add(analyzeSelectStmt(subQuery));
+            }
         }
     }
 
     protected ParsedQuery analyzeSelectStmt(TSelectSqlStatement pStmt) throws UnsupportedSqlException {
         LOGGER.log(Level.INFO, "select");
-        ParsedQuery query = new ParsedQuery(DlmQueryType.SELECT);
         if (pStmt.isCombinedQuery()) {
-            throw new UnsupportedSqlException("cobined queries are not supported yet");
-//            pStmt.getSetOperator() //to know type of combined query (i.e. union, intersect...)
-//            analyzeSelectStmt(pStmt.getLeftStmt());
-//            analyzeSelectStmt(pStmt.getRightStmt());
+            // pStmt.getSetOperator() //to know type of combined query (i.e. union, intersect...)
+            // here the problem is that, considering
+            // select f from tbl1 UNION select f from tbl2
+            // the two queries refer to two different fields "f", therefore I cannot return just one ParsedQuery
+            ParsedQuery q = analyzeSelectStmt(pStmt.getLeftStmt());
+            ParsedQuery last = q;
+            // the parser splits the queries like ( (Q1 UNION Q2) UNION Q3 )
+            while (last.nextCombinedQuery != null) {
+                last = last.nextCombinedQuery;
+            }
+            last.nextCombinedQuery = analyzeSelectStmt(pStmt.getRightStmt());
+            return q;
         } else {
+            ParsedQuery query = new ParsedQuery(DlmQueryType.SELECT);
             //select list
             for (int i = 0; i < pStmt.getResultColumnList().size(); i++) {
                 TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
                 addColumnsName(resultColumn.getExpr(), query);
             }
 
-            //from clause, check this document for detailed information
-            //http://www.sqlparser.com/sql-parser-query-join-table.php
             for (int i = 0; i < pStmt.joins.size(); i++) {
                 TJoin join = pStmt.joins.getJoin(i);
-                String tableAlias;
-                String tableName;
+                addTable(join.getTable(), query);
                 switch (join.getKind()) {
                     case TBaseType.join_source_fake:
-                        tableAlias = (join.getTable().getAliasClause() != null) ? join.getTable().getAliasClause().toString() : "";
-                        tableName = join.getTable().toString();
-                        query.addFrom(tableName, tableAlias);
+                        // nothing to do, this is the first table in the list
                         break;
                     case TBaseType.join_source_table:
-                        tableAlias = (join.getTable().getAliasClause() != null) ? join.getTable().getAliasClause().toString() : "";
-                        tableName = join.getTable().toString();
-                        query.addFrom(tableName, tableAlias);
                         for (int j = 0; j < join.getJoinItems().size(); j++) {
                             TJoinItem joinItem = join.getJoinItems().getJoinItem(j);
-                            tableAlias = (joinItem.getTable().getAliasClause() != null) ? joinItem.getTable().getAliasClause().toString() : "";
-                            tableName = joinItem.getTable().toString();
-                            query.addFrom(tableName, tableAlias);
+                            addTable(joinItem.getTable(), query);
 
                             if (joinItem.getOnCondition() != null) {
                                 evaluateWhereConditions(joinItem.getOnCondition(), query);
@@ -307,8 +319,36 @@ public class SqlParser {
             if (pStmt.getLimitClause() != null) {
                 throw new UnsupportedSqlException("limit clause: " + pStmt.getLimitClause().toString());
             }
+            return query;
         }
-        return query;
+    }
+
+    /**
+     * Parses the portion of the FROM clause to add the table to the
+     * ParsedQuery. Considering that the form clause can contain sub queries,
+     * this method recursively call the parse whenever it finds any of them.
+     *
+     * @param table the "virtual" table.
+     * @param query the ParsedQuery that is going to be constructed.
+     * @throws NullPointerException
+     * @throws UnsupportedSqlException
+     * @throws IllegalArgumentException
+     */
+    private void addTable(TTable table, ParsedQuery query) throws NullPointerException, UnsupportedSqlException, IllegalArgumentException {
+        String tableAlias = table.getAliasName();
+        String tableName;
+        switch (table.getTableType()) {
+            case objectname:
+                tableName = table.getName();
+                break;
+            case subquery:
+                tableName = "";
+                query.subQueries.add(analyzeSelectStmt(table.getSubquery()));
+                break;
+            default:
+                throw new UnsupportedSqlException("unsuppported table '%s' in from clause", table.toString());
+        }
+        query.addFrom(tableName, tableAlias);
     }
 
     private void parseWhere(ParsedQuery query, TWhereClause where) throws UnsupportedSqlException {
@@ -322,7 +362,9 @@ public class SqlParser {
         EExpressionType expressionType = conds.getExpressionType();
         switch (expressionType) {
             case subquery_t:
-                throw new UnsupportedSqlException("unsupported neasted query " + conds.toString());
+                ParsedQuery sub = analyzeSelectStmt(conds.getSubQuery());
+                query.subQueries.add(sub);
+                break;
             case logical_not_t:
             case parenthesis_t:
                 evaluateWhereConditions(conds.getLeftOperand(), query);

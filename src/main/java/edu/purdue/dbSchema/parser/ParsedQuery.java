@@ -41,6 +41,21 @@ public class ParsedQuery {
     public List<StringPair> whereColumns = new ArrayList<>();
 
     /**
+     * Contains the next query in case of combined queries. I.e. if the parsed
+     * query is "SQL1 union SQL2 except SQL3 intersect SQL4" and this element
+     * contains SQL2, nextCombinedQuery contains SQL3. This value is null if
+     * there is no next query.
+     */
+    public ParsedQuery nextCombinedQuery = null;
+
+    /**
+     * Contains a list of sub queries. I.e. in case of SELECT a, (SELECT ..)
+     * FROM tbl1, (SELECT ... ) as tbl2 WHERE f in (SELECT ...) this list will
+     * contain the three sub-queries. Empty if no sub-query exists.
+     */
+    public List<ParsedQuery> subQueries = new ArrayList<>();
+
+    /**
      * Creates a ParsedQyery with the specific type.
      *
      * @param type the type of the query.
@@ -69,6 +84,16 @@ public class ParsedQuery {
         mainColumns.add(new StringPair(table, colName));
     }
 
+    /**
+     * Adds a columns used to filter the query. Essentially all the columns that
+     * are in the WHERE clause.
+     *
+     * @param table the table name or view if explicitly specified in the query
+     * or empty string.
+     * @param colName the column name.
+     * @throws NullPointerException if colName or table is null.
+     * @throws IllegalArgumentException if colName is empty.
+     */
     public void addWhereColumn(String table, String colName) throws IllegalArgumentException, NullPointerException {
         if (table == null || colName == null) {
             throw new NullPointerException();
@@ -82,17 +107,17 @@ public class ParsedQuery {
     /**
      * Adds a table used in the query name.
      *
-     * @param table the table name.
+     * @param table the table name, empty if it is a sub-query.
      * @param alias the table alias or empty string if no alias is specified.
      * @throws NullPointerException if table or alias is null.
-     * @throws IllegalArgumentException if table is empty.
+     * @throws IllegalArgumentException if both table and alias are empty.
      */
     public void addFrom(String table, String alias) throws IllegalArgumentException, NullPointerException {
         if (table == null || alias == null) {
             throw new NullPointerException();
         }
-        if (table.isEmpty()) {
-            throw new IllegalArgumentException("Missing table name");
+        if (table.isEmpty() && alias.isEmpty()) {
+            throw new IllegalArgumentException("Missing both table and alias name");
         }
         from.add(new StringPair(table, alias));
     }

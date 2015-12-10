@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.junit.Assert.assertThat;
@@ -124,12 +126,16 @@ public class SqlParserTest {
         assertThat(query.whereColumns, contains(new StringPair("", "a"), new StringPair("", "b"), new StringPair("tbl1", "a"), new StringPair("tbl2", "b")));
         assertThat(query.mainColumns, contains(new StringPair("", "*"), new StringPair("a", "f1")));
         assertThat(query.from, contains(new StringPair("tbl1", ""), new StringPair("tbl2", "t2"), new StringPair("tbl3", "")));
+        assertThat(query.nextCombinedQuery, nullValue());
+        assertThat(query.subQueries, empty());
 
         query = queries.get(1);
         assertThat(query.type, is(DlmQueryType.SELECT));
         assertThat(query.whereColumns, contains(new StringPair("", "a")));
         assertThat(query.mainColumns, contains(new StringPair("", "*"), new StringPair("tblA", "col1")));
         assertThat(query.from, contains(new StringPair("tbl1", "tb1"), new StringPair("tbl2", "tblA")));
+        assertThat(query.nextCombinedQuery, nullValue());
+        assertThat(query.subQueries, empty());
 
     }
 
@@ -145,6 +151,9 @@ public class SqlParserTest {
         assertThat(query.from, contains(new StringPair("tbl1", "")));
 
         assertThat(query.mainColumns, contains(new StringPair("", "c1"), new StringPair("", "c2")));
+
+        assertThat(query.nextCombinedQuery, nullValue());
+        assertThat(query.subQueries, empty());
     }
 
     @Test
@@ -161,6 +170,9 @@ public class SqlParserTest {
 
         assertThat(query.from, contains(new StringPair("tbl1", "")));
         assertThat(query.mainColumns, contains(new StringPair("", "c1"), new StringPair("", "c2")));
+
+        assertThat(query.nextCombinedQuery, nullValue());
+        assertThat(query.subQueries, empty());
     }
 
     @Test
@@ -176,6 +188,9 @@ public class SqlParserTest {
         assertThat(query.from, contains(new StringPair("tbl1", "")));
         assertThat(query.whereColumns, contains(new StringPair("tbl1", "c")));
         assertThat(query.mainColumns, hasSize(0));
+
+        assertThat(query.nextCombinedQuery, nullValue());
+        assertThat(query.subQueries, empty());
     }
 
     @Test
@@ -191,6 +206,9 @@ public class SqlParserTest {
         assertThat(query.mainColumns, contains(new StringPair("", "c1"), new StringPair("", "c2")));
         assertThat(query.from, contains(new StringPair("tbl1", "")));
         assertThat(query.whereColumns, contains(new StringPair("", "c2")));
+
+        assertThat(query.nextCombinedQuery, nullValue());
+        assertThat(query.subQueries, empty());
     }
 
     @Test
@@ -208,5 +226,68 @@ public class SqlParserTest {
                 new StringPair("", "F_ARRIVE_TIME"),
                 new StringPair("", "NEGATIVE_FIELD")
         ));
+    }
+
+    @Test
+    public void parse_combinedQueries() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        p.parse("SELECT f1 FROM t1 UNION SELECT f2 FROM t2 UNION SELECT f3 FROM t3");
+        List<ParsedQuery> queries = p.getDmlQueries();
+
+        assertThat(queries, hasSize(1));
+        ParsedQuery query = queries.get(0);
+
+        for (int n = 1; n <= 3; n++) {
+            assertThat(query.type, is(DlmQueryType.SELECT));
+            assertThat(query.mainColumns, contains(new StringPair("", "f" + n)));
+            assertThat(query.from, contains(new StringPair("t" + n, "")));
+            assertThat(query.whereColumns, empty());
+            assertThat(query.subQueries, empty());
+            query = query.nextCombinedQuery;
+        }
+        assertThat(query, nullValue());
+    }
+
+    @Test
+    public void parse_subQueries() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        p.parse("SELECT f1, t3.f, (select count(*) from t1 where f1 = t2.f) as c FROM t2, (select * from tbl3) as t3 where f1 in (select l from t4)");
+        List<ParsedQuery> queries = p.getDmlQueries();
+        assertThat(queries, hasSize(1));
+
+        ParsedQuery query = queries.get(0);
+        assertThat(query.type, is(DlmQueryType.SELECT));
+        assertThat(query.mainColumns, contains(new StringPair("", "f1"), new StringPair("t3", "f")));
+        assertThat(query.from, contains(new StringPair("t2", ""), new StringPair("", "t3")));
+        assertThat(query.whereColumns, contains(new StringPair("", "f1")));
+        assertThat(query.nextCombinedQuery, nullValue());
+
+        assertThat(query.subQueries, hasSize(3));
+
+        ParsedQuery sub;
+
+        sub = query.subQueries.get(0);
+        assertThat(sub.type, is(DlmQueryType.SELECT));
+        assertThat(sub.mainColumns, contains(new StringPair("", "*")));
+        assertThat(sub.from, contains(new StringPair("t1", "")));
+        assertThat(sub.whereColumns, contains(new StringPair("", "f1"), new StringPair("t2", "f")));
+        assertThat(sub.nextCombinedQuery, nullValue());
+        assertThat(sub.subQueries, hasSize(0));
+
+        sub = query.subQueries.get(1);
+        assertThat(sub.type, is(DlmQueryType.SELECT));
+        assertThat(sub.mainColumns, contains(new StringPair("", "*")));
+        assertThat(sub.from, contains(new StringPair("tbl3", "")));
+        assertThat(sub.whereColumns, empty());
+        assertThat(sub.nextCombinedQuery, nullValue());
+        assertThat(sub.subQueries, hasSize(0));
+
+        sub = query.subQueries.get(2);
+        assertThat(sub.type, is(DlmQueryType.SELECT));
+        assertThat(sub.mainColumns, contains(new StringPair("", "l")));
+        assertThat(sub.from, contains(new StringPair("t4", "")));
+        assertThat(sub.whereColumns, empty());
+        assertThat(sub.nextCombinedQuery, nullValue());
+        assertThat(sub.subQueries, hasSize(0));
     }
 }
