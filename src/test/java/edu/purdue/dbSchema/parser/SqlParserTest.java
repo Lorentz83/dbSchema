@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -235,7 +237,7 @@ public class SqlParserTest {
             assertThat(query.mainColumns, contains(new StringPair("", "f" + n)));
             assertThat(query.from, contains(new StringPair("t" + n, "")));
             assertThat(query.whereColumns, empty());
-            assertThat(query.subQueriesFrom, empty());
+            assertThat(query.subQueriesFrom, anEmptyMap());
             assertThat(query.subQueriesSelect, empty());
             assertThat(query.subQueriesWhere, empty());
             query = query.nextCombinedQuery;
@@ -257,7 +259,7 @@ public class SqlParserTest {
         assertThat(query.whereColumns, contains(new StringPair("", "f1")));
         assertThat(query.nextCombinedQuery, nullValue());
 
-        assertThat(query.subQueriesFrom, hasSize(1));
+        assertThat(query.subQueriesFrom, aMapWithSize(1));
         assertThat(query.subQueriesSelect, hasSize(1));
         assertThat(query.subQueriesWhere, hasSize(1));
 
@@ -270,7 +272,7 @@ public class SqlParserTest {
         assertThat(sub.whereColumns, contains(new StringPair("", "f1"), new StringPair("t2", "f")));
         assertNoSubOrCombinedQueries(sub);
 
-        sub = query.subQueriesFrom.get(0);
+        sub = query.subQueriesFrom.get("t3");
         assertThat(sub.type, is(DlmQueryType.SELECT));
         assertThat(sub.mainColumns, contains(new StringPair("", "*")));
         assertThat(sub.from, contains(new StringPair("tbl3", "")));
@@ -286,7 +288,7 @@ public class SqlParserTest {
     }
 
     private void assertNoSubOrCombinedQueries(ParsedQuery query) {
-        assertThat(query.subQueriesFrom, empty());
+        assertThat(query.subQueriesFrom, anEmptyMap());
         assertThat(query.subQueriesSelect, empty());
         assertThat(query.subQueriesWhere, empty());
         assertThat(query.nextCombinedQuery, nullValue());

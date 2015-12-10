@@ -101,31 +101,66 @@ public class DatabaseEngine implements Serializable {
      */
     protected QueryFeature evaluateDlmQuery(ParsedQuery parsed, Name userName, Map<Name, Table> additionalTables) throws SqlSemanticException, NullPointerException, UnauthorizedSqlException {
         HashMap<Name, Table> usedTables = filterTables(parsed.from, additionalTables);
-        ArrayList<Column> select = getSelectedColumns(usedTables, parsed.mainColumns);
-        ArrayList<Column> where = getSelectedColumns(usedTables, parsed.whereColumns);
-        Set<Name> usedRoles = new HashSet<>();
 
-        if (userName != null) {
-            if (parsed.type == DlmQueryType.SELECT) {
-                usedRoles.addAll(_grants.enforceRead(userName, select));
-            } else {
-                usedRoles.addAll(_grants.enforceWrite(userName, select));
+        List<QueryFeature> features = new ArrayList<>();
+
+        // sub queries
+        for (Map.Entry<String, ParsedQuery> set : parsed.subQueriesFrom.entrySet()) {
+            Name alias = new Name(set.getKey());
+            ParsedQuery sub = set.getValue();
+            QueryFeature qf = evaluateDlmQuery(sub, userName, usedTables);
+            features.add(qf);
+            if (usedTables.put(alias, new Table(alias, qf.getUsedCols())) != null) {
+                throw new SqlSemanticException("table name '%s' specified more than once", alias);
             }
-            usedRoles.addAll(_grants.enforceRead(userName, where));
         }
-        QueryFeature feature = new QueryFeature(parsed.type, select, where, usedRoles);
         for (ParsedQuery sub : parsed.subQueriesSelect) {
-            feature = feature.merge(evaluateDlmQuery(sub, userName, usedTables));
+            features.add(evaluateDlmQuery(sub, userName, usedTables));
         }
         for (ParsedQuery sub : parsed.subQueriesWhere) {
-            feature = feature.merge(evaluateDlmQuery(sub, userName, usedTables));
+            features.add(evaluateDlmQuery(sub, userName, usedTables));
         }
 
+        // current query
+        ArrayList<Column> select = getSelectedColumns(usedTables, parsed.mainColumns);
+        ArrayList<Column> where = getSelectedColumns(usedTables, parsed.whereColumns);
+        Set<Name> usedRoles = enforceRoles(userName, parsed.type, select, where);
+        features.add(new QueryFeature(parsed.type, select, where, usedRoles));
+
+        // next query
         if (parsed.nextCombinedQuery != null) {
-            QueryFeature feature2 = evaluateDlmQuery(parsed.nextCombinedQuery, userName, Collections.<Name, Table>emptyMap());
-            feature = feature.merge(feature2);
+            features.add(evaluateDlmQuery(parsed.nextCombinedQuery, userName, Collections.<Name, Table>emptyMap()));
         }
-        return feature;
+
+        // combine the result
+        return new QueryFeature(features);
+    }
+
+    /**
+     * Checks if the user has the right privileges on the selected columns. the
+     * mainCols are the main columns involved in the queries, that may be the
+     * selected or the updated. Depending on the query type these columns are
+     * checked for write or read permission.
+     *
+     * @param userName the user who sent the query.
+     * @param type the query type.
+     * @param mainCols the main columns used in the query.
+     * @param filteredCols the columns used to filter the query.
+     * @return a set with the roles used by the user.
+     * @throws UnauthorizedSqlException if the user misses any required right.
+     * @throws NullPointerException
+     */
+    private Set<Name> enforceRoles(Name userName, DlmQueryType type, ArrayList<Column> mainCols, ArrayList<Column> filteredCols) throws UnauthorizedSqlException, NullPointerException {
+        Set<Name> usedRoles = new HashSet<>();
+        if (userName != null) {
+            if (type == DlmQueryType.SELECT) {
+                usedRoles.addAll(_grants.enforceRead(userName, mainCols));
+            } else {
+                usedRoles.addAll(_grants.enforceWrite(userName, mainCols));
+            }
+            usedRoles.addAll(_grants.enforceRead(userName, filteredCols));
+        }
+        return usedRoles;
     }
 
     /**

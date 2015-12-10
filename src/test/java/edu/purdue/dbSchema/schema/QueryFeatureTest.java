@@ -52,6 +52,8 @@ public class QueryFeatureTest {
         Name user1 = new Name("username1");
         Name user2 = new Name("username2");
 
+        ArrayList<QueryFeature> features = new ArrayList<>();
+
         List<Column> used1 = new ArrayList<>();
         List<Column> where1 = new ArrayList<>();
         Set<Name> roles1 = new TreeSet<>();
@@ -60,7 +62,7 @@ public class QueryFeatureTest {
         used1.add(col2);
         roles1.add(user1);
 
-        QueryFeature f1 = new QueryFeature(type, used1, where1, roles1);
+        features.add(new QueryFeature(type, used1, where1, roles1));
 
         List<Column> used2 = new ArrayList<>();
         List<Column> where2 = new ArrayList<>();
@@ -72,9 +74,9 @@ public class QueryFeatureTest {
 
         roles2.add(user2);
 
-        QueryFeature f2 = new QueryFeature(type, used2, where2, roles2);
+        features.add(new QueryFeature(type, used2, where2, roles2));
 
-        QueryFeature merged = f1.merge(f2);
+        QueryFeature merged = new QueryFeature(features);
 
         assertThat(merged.getType(), is(type));
         assertThat(merged.getUsedCols(), containsInAnyOrder(col1, col2, col3));

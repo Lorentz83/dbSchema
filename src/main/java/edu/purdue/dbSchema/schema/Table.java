@@ -28,6 +28,21 @@ public class Table implements Serializable {
     }
 
     /**
+     * Creates a virtual table using other table columns. Useful for views or
+     * sub-queries.
+     *
+     * @param alias the name of this virtual table.
+     * @param columns the columns to use;
+     */
+    Table(Name alias, Collection<Column> columns) {
+        _name = alias;
+        _cols = new TreeMap<>();
+        for (Column col : columns) {
+            _cols.put(col.getName(), col);
+        }
+    }
+
+    /**
      * Adds a column to the table.
      *
      * @param name the column name.

@@ -4,6 +4,7 @@ import edu.purdue.dbSchema.parser.DlmQueryType;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -28,8 +29,37 @@ public class QueryFeature {
         _roles = Collections.unmodifiableCollection(roles);
     }
 
-    QueryFeature() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    /**
+     * Creates a QueryFeature merging all the features provided.
+     *
+     * @param features the features to merge.
+     * @throws UnsupportedOperationException if the type of the features does
+     * not match.
+     * @throws NullPointerException if features or any of its element is null.
+     * @throws NoSuchElementException if there is no feature
+     */
+    QueryFeature(Collection<QueryFeature> features) throws NullPointerException, UnsupportedOperationException, NoSuchElementException {
+        if (features.isEmpty()) {
+            throw new NoSuchElementException("no features to merge");
+        }
+        Set<Column> usedCols = new HashSet<>();
+        Set<Column> filteredCols = new HashSet<>();
+        Set<Name> roles = new TreeSet<>();
+        DlmQueryType type = null;
+
+        for (QueryFeature other : features) {
+            if (type != null && type != other._type) {
+                throw new UnsupportedOperationException("Cannot merge different type of features yet");
+            }
+            type = other._type;
+            usedCols.addAll(other._usedCols);
+            filteredCols.addAll(other._filteredCols);
+            roles.addAll(other._roles);
+        }
+        _type = type;
+        _usedCols = Collections.unmodifiableCollection(usedCols);
+        _filteredCols = Collections.unmodifiableCollection(filteredCols);
+        _roles = Collections.unmodifiableCollection(roles);
     }
 
     public DlmQueryType getType() {
@@ -46,21 +76,5 @@ public class QueryFeature {
 
     public Collection<Name> getRoles() {
         return _roles;
-    }
-
-    QueryFeature merge(QueryFeature other) {
-        if (_type != other._type) {
-            throw new UnsupportedOperationException("Cannot merge different type of features yet");
-        }
-        Set<Column> usedCols = new HashSet<>(_usedCols);
-        usedCols.addAll(other._usedCols);
-
-        Set<Column> filteredCols = new HashSet<>(_filteredCols);
-        filteredCols.addAll(other._filteredCols);
-
-        Set<Name> roles = new TreeSet<>(_roles);
-        roles.addAll(other._roles);
-
-        return new QueryFeature(_type, usedCols, filteredCols, roles);
     }
 }

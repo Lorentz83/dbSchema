@@ -343,7 +343,7 @@ public class SqlParser {
                 break;
             case subquery:
                 tableName = "";
-                query.subQueriesFrom.add(analyzeSelectStmt(table.getSubquery()));
+                query.subQueriesFrom.put(tableAlias, analyzeSelectStmt(table.getSubquery()));
                 break;
             default:
                 throw new UnsupportedSqlException("unsuppported table '%s' in from clause", table.toString());
