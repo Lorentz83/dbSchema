@@ -60,7 +60,7 @@ public class DatabaseEngine implements Serializable {
         }
 
         for (ParsedQuery q : parsedQueries) {
-            QueryFeature qf = evaluateDlmQuery(q, normalizedUsername);
+            QueryFeature qf = evaluateDlmQuery(q, normalizedUsername, Collections.<Name, Table>emptyMap());
             features.add(qf);
         }
         return features;
@@ -79,31 +79,50 @@ public class DatabaseEngine implements Serializable {
         }
         for (ParsedQuery parsed : parser.getDmlQueries()) {
             try {
-                evaluateDlmQuery(parsed, null);
+                evaluateDlmQuery(parsed, null, Collections.<Name, Table>emptyMap());
             } catch (UnauthorizedSqlException ex) {
                 LOGGER.log(Level.SEVERE, "This exception should never been thrown in this context", ex);
+                throw new AssertionError(ex);
             }
         }
         return ret;
     }
 
-    protected QueryFeature evaluateDlmQuery(ParsedQuery parsed, Name name) throws SqlSemanticException, NullPointerException, UnauthorizedSqlException {
-        HashMap<Name, Table> usedTables = filterTables(parsed.from);
+    /**
+     *
+     * @param parsed the parsed query to evaluate.
+     * @param userName the user name who issued the query.
+     * @param additionalTables additional tables to use to resolve the name.
+     * I.e. tables used in the outer query.
+     * @return the query feature set.
+     * @throws SqlSemanticException
+     * @throws NullPointerException
+     * @throws UnauthorizedSqlException
+     */
+    protected QueryFeature evaluateDlmQuery(ParsedQuery parsed, Name userName, Map<Name, Table> additionalTables) throws SqlSemanticException, NullPointerException, UnauthorizedSqlException {
+        HashMap<Name, Table> usedTables = filterTables(parsed.from, additionalTables);
         ArrayList<Column> select = getSelectedColumns(usedTables, parsed.mainColumns);
         ArrayList<Column> where = getSelectedColumns(usedTables, parsed.whereColumns);
         Set<Name> usedRoles = new HashSet<>();
 
-        if (name != null) {
+        if (userName != null) {
             if (parsed.type == DlmQueryType.SELECT) {
-                usedRoles.addAll(_grants.enforceRead(name, select));
+                usedRoles.addAll(_grants.enforceRead(userName, select));
             } else {
-                usedRoles.addAll(_grants.enforceWrite(name, select));
+                usedRoles.addAll(_grants.enforceWrite(userName, select));
             }
-            usedRoles.addAll(_grants.enforceRead(name, where));
+            usedRoles.addAll(_grants.enforceRead(userName, where));
         }
         QueryFeature feature = new QueryFeature(parsed.type, select, where, usedRoles);
+        for (ParsedQuery sub : parsed.subQueriesSelect) {
+            feature = feature.merge(evaluateDlmQuery(sub, userName, usedTables));
+        }
+        for (ParsedQuery sub : parsed.subQueriesWhere) {
+            feature = feature.merge(evaluateDlmQuery(sub, userName, usedTables));
+        }
+
         if (parsed.nextCombinedQuery != null) {
-            QueryFeature feature2 = evaluateDlmQuery(parsed.nextCombinedQuery, name);
+            QueryFeature feature2 = evaluateDlmQuery(parsed.nextCombinedQuery, userName, Collections.<Name, Table>emptyMap());
             feature = feature.merge(feature2);
         }
         return feature;
@@ -170,14 +189,20 @@ public class DatabaseEngine implements Serializable {
      * Filter the tables used by the query.
      *
      * @param tableNames a list of pairs (table name, table alias).
+     * @param additionalTables additional tables to be used to resolve the
+     * names, i.e. the parent query tables.
      * @return a Map that associates names to tables and aliases to tables.
      * @throws SqlSemanticException if a table does not exists in the db or a
      * table is specified more than once.
      */
-    protected HashMap<Name, Table> filterTables(List<StringPair> tableNames) throws SqlSemanticException {
-        HashMap<Name, Table> usedTables = new HashMap<>();
+    protected HashMap<Name, Table> filterTables(List<StringPair> tableNames, Map<Name, Table> additionalTables) throws SqlSemanticException {
+        HashMap<Name, Table> usedTables = new HashMap<>(additionalTables); // we want to copy it to don't change the parent's mapping
         HashSet<Name> tablesWithAlias = new HashSet<>();
         for (StringPair from : tableNames) {
+            if (from.first.isEmpty()) {
+                // this is a subquery
+                continue;
+            }
             final Name name = new Name(from.first);
             final String alias = from.second;
 

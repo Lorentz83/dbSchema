@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
@@ -46,7 +47,7 @@ public class DatabaseEngineTest {
     public void filterTablesMissingTable() throws Exception {
         try {
             _select.addFrom("tblX", "");
-            _testDb.filterTables(_select.from);
+            _testDb.filterTables(_select.from, Collections.<Name, Table>emptyMap());
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("relation 'tblX' does not exist"));
@@ -58,7 +59,7 @@ public class DatabaseEngineTest {
         try {
             _select.addFrom("tbl1", "");
             _select.addFrom("tbl1", "");
-            _testDb.filterTables(_select.from);
+            _testDb.filterTables(_select.from, Collections.<Name, Table>emptyMap());
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("table name 'tbl1' specified more than once"));
@@ -70,7 +71,7 @@ public class DatabaseEngineTest {
         try {
             _select.addFrom("tbl1", "t");
             _select.addFrom("tbl2", "t");
-            _testDb.filterTables(_select.from);
+            _testDb.filterTables(_select.from, Collections.<Name, Table>emptyMap());
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("table name 't' specified more than once"));
@@ -82,7 +83,7 @@ public class DatabaseEngineTest {
         Table tbl1 = _testDb.getTable("tbl1");
         _select.addFrom("tbl1", "t1");
         _select.addFrom("tbl1", "t2");
-        HashMap<Name, Table> tables = _testDb.filterTables(_select.from);
+        HashMap<Name, Table> tables = _testDb.filterTables(_select.from, Collections.<Name, Table>emptyMap());
         assertThat(tables, hasEntry(new Name("t1"), tbl1));
         assertThat(tables, hasEntry(new Name("t2"), tbl1));
         assertThat(tables, aMapWithSize(2));
@@ -93,7 +94,7 @@ public class DatabaseEngineTest {
         _select.addFrom("tbl1", "");
         _select.addFrom("tbl2", "tbl1");
         try {
-            _testDb.filterTables(_select.from);
+            _testDb.filterTables(_select.from, Collections.<Name, Table>emptyMap());
             fail("Missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("table name 'tbl1' specified more than once"));
@@ -106,7 +107,7 @@ public class DatabaseEngineTest {
         Table tbl2 = _testDb.getTable("tbl2");
         _select.addFrom("tbl1", "");
         _select.addFrom("tbl2", "t2");
-        HashMap<Name, Table> filtered = _testDb.filterTables(_select.from);
+        HashMap<Name, Table> filtered = _testDb.filterTables(_select.from, Collections.<Name, Table>emptyMap());
         assertThat(filtered, hasEntry(new Name("tbl1"), tbl1));
         assertThat(filtered, hasEntry(new Name("tbl2"), tbl2));
         assertThat(filtered, hasEntry(new Name("t2"), tbl2));
@@ -247,7 +248,7 @@ public class DatabaseEngineTest {
         _select.addFrom("tbl2", "t2");
         _select.addMainColumn("tbl1", "id");
         _select.addMainColumn("t2", "f2");
-        QueryFeature res = _testDb.evaluateDlmQuery(_select, null);
+        QueryFeature res = _testDb.evaluateDlmQuery(_select, null, Collections.<Name, Table>emptyMap());
 
         Column c1 = _testDb.getTable("tbl1").getColumn("id");
         Column c2 = _testDb.getTable("tbl2").getColumn("f2");

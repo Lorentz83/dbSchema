@@ -59,14 +59,13 @@ public class IntegrationTest {
         String sql = "";
 
         sql += "select al_name from \"AIRLINE\" WHERE al_id in (SELECT f_al_id from \"FLIGHT\" where f_arrive_time = f_depart_time ); ";
-        sql += "select al_name, (select count(*) from \"FLIGHT\" where f_al_id = al_id ) from \"AIRLINE\"; ";
+        sql += "select al_name, (select count(f_id) from \"FLIGHT\" where f_al_id = al_id ) from \"AIRLINE\"; ";
         sql += "select sub.name from (select al_name as name, count(*) as num from \"AIRLINE\" group by al_name) as sub; ";
 
         List<QueryFeature> res = db.parse(sql, username);
         QueryFeature feature;
 
         assertThat(res, hasSize(3));
-
         feature = res.get(0);
         assertThat(feature.getType(), is(DlmQueryType.SELECT));
         assertThat(feature.getUsedCols(), containsInAnyOrder(airline.getColumn("al_name"), flight.getColumn("f_al_id")));
@@ -74,7 +73,7 @@ public class IntegrationTest {
 
         feature = res.get(1);
         assertThat(feature.getType(), is(DlmQueryType.SELECT));
-        assertThat(feature.getUsedCols(), containsInAnyOrder(airline.getColumn("al_name")));
+        assertThat(feature.getUsedCols(), containsInAnyOrder(airline.getColumn("al_name"), flight.getColumn("f_id")));
         assertThat(feature.getFilteredCols(), containsInAnyOrder(flight.getColumn("f_al_id"), airline.getColumn("al_id")));
 
         feature = res.get(2);
