@@ -15,11 +15,11 @@ import java.util.TreeSet;
 public class QueryFeature {
 
     private final DlmQueryType _type;
-    private final Collection<Column> _usedCols;
-    private final Collection<Column> _filteredCols;
+    private final Collection<AbstractColumn> _usedCols;
+    private final Collection<AbstractColumn> _filteredCols;
     private final Collection<Name> _roles;
 
-    public QueryFeature(DlmQueryType type, Collection<Column> used, Collection<Column> where, Collection<Name> roles) {
+    public QueryFeature(DlmQueryType type, Collection<AbstractColumn> used, Collection<AbstractColumn> where, Collection<Name> roles) {
         if (type == null || used == null || where == null || roles == null) {
             throw new NullPointerException();
         }
@@ -42,8 +42,8 @@ public class QueryFeature {
         if (features.isEmpty()) {
             throw new NoSuchElementException("no features to merge");
         }
-        Set<Column> usedCols = new HashSet<>();
-        Set<Column> filteredCols = new HashSet<>();
+        Set<AbstractColumn> usedCols = new HashSet<>();
+        Set<AbstractColumn> filteredCols = new HashSet<>();
         Set<Name> roles = new TreeSet<>();
         DlmQueryType type = null;
 
@@ -66,11 +66,11 @@ public class QueryFeature {
         return _type;
     }
 
-    public Collection<Column> getUsedCols() {
+    public Collection<AbstractColumn> getUsedCols() {
         return _usedCols;
     }
 
-    public Collection<Column> getFilteredCols() {
+    public Collection<AbstractColumn> getFilteredCols() {
         return _filteredCols;
     }
 

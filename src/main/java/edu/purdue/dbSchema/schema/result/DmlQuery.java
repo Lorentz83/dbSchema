@@ -1,7 +1,7 @@
 package edu.purdue.dbSchema.schema.result;
 
 import edu.purdue.dbSchema.parser.DlmQueryType;
-import edu.purdue.dbSchema.schema.Column;
+import edu.purdue.dbSchema.schema.RealColumn;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,11 +12,11 @@ import java.util.List;
 public class DmlQuery {
 
     private final DlmQueryType _type;
-    private final List<Column> _selected;
-    private final List<Column> _filtered;
-    private final List<Column> _changed;
+    private final List<RealColumn> _selected;
+    private final List<RealColumn> _filtered;
+    private final List<RealColumn> _changed;
 
-    DmlQuery(DlmQueryType type, List<Column> selected, List<Column> filtered, List<Column> changed) {
+    DmlQuery(DlmQueryType type, List<RealColumn> selected, List<RealColumn> filtered, List<RealColumn> changed) {
         _type = type;
         _selected = Collections.unmodifiableList(selected);
         _filtered = Collections.unmodifiableList(filtered);
@@ -27,15 +27,15 @@ public class DmlQuery {
         return _type;
     }
 
-    public List<Column> getSelected() {
+    public List<RealColumn> getSelected() {
         return _selected;
     }
 
-    public List<Column> getFiltered() {
+    public List<RealColumn> getFiltered() {
         return _filtered;
     }
 
-    public List<Column> getChanged() {
+    public List<RealColumn> getChanged() {
         return _changed;
     }
 

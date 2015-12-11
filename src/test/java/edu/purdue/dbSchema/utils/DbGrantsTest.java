@@ -2,7 +2,7 @@ package edu.purdue.dbSchema.utils;
 
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
-import edu.purdue.dbSchema.schema.Column;
+import edu.purdue.dbSchema.schema.AbstractColumn;
 import edu.purdue.dbSchema.schema.Name;
 import edu.purdue.dbSchema.schema.Table;
 import java.util.ArrayList;
@@ -25,8 +25,8 @@ public class DbGrantsTest {
 
     DbGrants _grants = new DbGrants();
     Table _table1, _table2;
-    private Column _col1;
-    private Column _col2;
+    private AbstractColumn _col1;
+    private AbstractColumn _col2;
 
     @Before
     public void init() throws Exception {
@@ -101,14 +101,14 @@ public class DbGrantsTest {
         }
     }
 
-    private Collection<Column> collection(Column el) {
-        ArrayList<Column> ret = new ArrayList<>();
+    private Collection<AbstractColumn> collection(AbstractColumn el) {
+        ArrayList<AbstractColumn> ret = new ArrayList<>();
         ret.add(el);
         return ret;
     }
 
-    private Collection<Column> collection(Column el1, Column el2) {
-        ArrayList<Column> ret = new ArrayList<>();
+    private Collection<AbstractColumn> collection(AbstractColumn el1, AbstractColumn el2) {
+        ArrayList<AbstractColumn> ret = new ArrayList<>();
         ret.add(el1);
         ret.add(el2);
         return ret;

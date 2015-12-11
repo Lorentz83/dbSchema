@@ -9,24 +9,24 @@ import org.junit.Test;
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
-public class ColumnTest {
+public class RealColumnTest {
 
     @Test
     public void ctorException() {
-        Column col;
+        RealColumn col;
         try {
-            col = new Column(null, "asd", false, false, null);
+            col = new RealColumn(null, "asd", false, false, null);
             fail("Missing NullPointerExceptio");
         } catch (NullPointerException e) {
         }
         try {
-            col = new Column(new Name("asd"), null, false, false, null);
+            col = new RealColumn(new Name("asd"), null, false, false, null);
             fail("Missing NullPointerExceptio");
         } catch (NullPointerException e) {
         }
 
         try {
-            col = new Column(new Name(""), "", false, false, null);
+            col = new RealColumn(new Name(""), "", false, false, null);
             fail("Missing IllegalArgumentException");
         } catch (IllegalArgumentException e) {
         }
@@ -34,8 +34,8 @@ public class ColumnTest {
 
     @Test
     public void equalsChecksInstances() {
-        Column col = new Column(new Name("colName"), "type", true, true, null);
-        Column sameCol = new Column(new Name("colName"), "type", true, true, null);
+        RealColumn col = new RealColumn(new Name("colName"), "type", true, true, null);
+        RealColumn sameCol = new RealColumn(new Name("colName"), "type", true, true, null);
 
         assertThat(col.equals(sameCol), is(false));
         assertThat(col.equals(col), is(true));

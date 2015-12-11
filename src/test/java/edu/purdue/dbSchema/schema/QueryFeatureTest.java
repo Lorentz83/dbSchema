@@ -19,8 +19,8 @@ public class QueryFeatureTest {
 
     @Test
     public void testImmutableCollections() {
-        List<Column> used = new ArrayList<>();
-        List<Column> where = new ArrayList<>();
+        List<AbstractColumn> used = new ArrayList<>();
+        List<AbstractColumn> where = new ArrayList<>();
         Set<Name> roles = new TreeSet<>();
 
         QueryFeature feature = new QueryFeature(DlmQueryType.INSERT, used, where, roles);
@@ -46,16 +46,16 @@ public class QueryFeatureTest {
     public void merge_noDuplicates() {
         DlmQueryType type = DlmQueryType.INSERT;
 
-        Column col1 = new Column(new Name("col1"), "type", true, true, null);
-        Column col2 = new Column(new Name("col2"), "type", true, true, null);
-        Column col3 = new Column(new Name("col3"), "type", true, true, null);
+        RealColumn col1 = new RealColumn(new Name("col1"), "type", true, true, null);
+        RealColumn col2 = new RealColumn(new Name("col2"), "type", true, true, null);
+        RealColumn col3 = new RealColumn(new Name("col3"), "type", true, true, null);
         Name user1 = new Name("username1");
         Name user2 = new Name("username2");
 
         ArrayList<QueryFeature> features = new ArrayList<>();
 
-        List<Column> used1 = new ArrayList<>();
-        List<Column> where1 = new ArrayList<>();
+        List<AbstractColumn> used1 = new ArrayList<>();
+        List<AbstractColumn> where1 = new ArrayList<>();
         Set<Name> roles1 = new TreeSet<>();
 
         used1.add(col1);
@@ -64,8 +64,8 @@ public class QueryFeatureTest {
 
         features.add(new QueryFeature(type, used1, where1, roles1));
 
-        List<Column> used2 = new ArrayList<>();
-        List<Column> where2 = new ArrayList<>();
+        List<AbstractColumn> used2 = new ArrayList<>();
+        List<AbstractColumn> where2 = new ArrayList<>();
         Set<Name> roles2 = new TreeSet<>();
 
         used2.add(col2);

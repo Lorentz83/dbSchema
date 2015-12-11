@@ -4,7 +4,7 @@ import edu.purdue.dbSchema.erros.SqlParseException;
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
 import edu.purdue.dbSchema.erros.UnsupportedSqlException;
-import edu.purdue.dbSchema.schema.Column;
+import edu.purdue.dbSchema.schema.AbstractColumn;
 import edu.purdue.dbSchema.schema.DatabaseEngine;
 import edu.purdue.dbSchema.schema.QueryFeature;
 import edu.purdue.dbSchema.schema.Table;
@@ -50,9 +50,9 @@ public class App {
                 for (Table t : db.getTables()) {
                     System.out.print(t.getName().getName());
                     System.out.print(':');
-                    Collection<Column> cols = t.getColumns();
+                    Collection<AbstractColumn> cols = t.getColumns();
                     int n = 0;
-                    for (Column c : cols) {
+                    for (AbstractColumn c : cols) {
                         System.out.print(c.getName().getName());
                         if (++n < cols.size()) {
                             System.out.print(',');

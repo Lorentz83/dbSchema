@@ -101,6 +101,7 @@ public class DatabaseEngine implements Serializable {
      */
     protected QueryFeature evaluateDlmQuery(ParsedQuery parsed, Name userName, Map<Name, Table> additionalTables) throws SqlSemanticException, NullPointerException, UnauthorizedSqlException {
         HashMap<Name, Table> usedTables = filterTables(parsed.from, additionalTables);
+        HashMap<Name, Table> virtualTables = new HashMap<>();
 
         List<QueryFeature> features = new ArrayList<>();
 
@@ -110,10 +111,22 @@ public class DatabaseEngine implements Serializable {
             ParsedQuery sub = set.getValue();
             QueryFeature qf = evaluateDlmQuery(sub, userName, usedTables);
             features.add(qf);
-            if (usedTables.put(alias, new Table(alias, qf.getUsedCols())) != null) {
+
+            Table virtualTable = new Table(alias, qf.getUsedCols());
+            for (String virtualCol : sub.virtualColumns.keySet()) {
+                virtualTable.addVirtualColumn(virtualCol, null);
+            }
+            if (virtualTables.put(alias, virtualTable) != null) {
                 throw new SqlSemanticException("table name '%s' specified more than once", alias);
             }
         }
+
+        for (Map.Entry<Name, Table> vt : virtualTables.entrySet()) {
+            if (usedTables.put(vt.getKey(), vt.getValue()) != null) {
+                throw new SqlSemanticException("table name '%s' specified more than once", vt.getKey());
+            }
+        }
+
         for (ParsedQuery sub : parsed.subQueriesSelect) {
             features.add(evaluateDlmQuery(sub, userName, usedTables));
         }
@@ -122,8 +135,8 @@ public class DatabaseEngine implements Serializable {
         }
 
         // current query
-        ArrayList<Column> select = getSelectedColumns(usedTables, parsed.mainColumns);
-        ArrayList<Column> where = getSelectedColumns(usedTables, parsed.whereColumns);
+        ArrayList<AbstractColumn> select = getSelectedColumns(usedTables, parsed.mainColumns);
+        ArrayList<AbstractColumn> where = getSelectedColumns(usedTables, parsed.whereColumns);
         Set<Name> usedRoles = enforceRoles(userName, parsed.type, select, where);
         features.add(new QueryFeature(parsed.type, select, where, usedRoles));
 
@@ -150,7 +163,7 @@ public class DatabaseEngine implements Serializable {
      * @throws UnauthorizedSqlException if the user misses any required right.
      * @throws NullPointerException
      */
-    private Set<Name> enforceRoles(Name userName, DlmQueryType type, ArrayList<Column> mainCols, ArrayList<Column> filteredCols) throws UnauthorizedSqlException, NullPointerException {
+    private Set<Name> enforceRoles(Name userName, DlmQueryType type, ArrayList<AbstractColumn> mainCols, ArrayList<AbstractColumn> filteredCols) throws UnauthorizedSqlException, NullPointerException {
         Set<Name> usedRoles = new HashSet<>();
         if (userName != null) {
             if (type == DlmQueryType.SELECT) {
@@ -173,13 +186,13 @@ public class DatabaseEngine implements Serializable {
      * @throws SqlSemanticException if a column is referenced more than once, if
      * a column name is ambiguous or if a column reference a missing table
      */
-    protected static ArrayList<Column> getSelectedColumns(final HashMap<Name, Table> usedTables, final List<StringPair> selectedCols) throws SqlSemanticException {
-        ArrayList<Column> usedCols = new ArrayList<>();
+    protected static ArrayList<AbstractColumn> getSelectedColumns(final HashMap<Name, Table> usedTables, final List<StringPair> selectedCols) throws SqlSemanticException {
+        ArrayList<AbstractColumn> usedCols = new ArrayList<>();
         for (StringPair select : selectedCols) {
             String tblName = select.first; //may be empty
             String colName = select.second;
             Table selectedTable;
-            Column selectedCol = null;
+            AbstractColumn selectedCol = null;
 
             if (tblName.isEmpty()) { // we miss the table name
                 if (colName.equals("*")) { //select *
@@ -191,7 +204,7 @@ public class DatabaseEngine implements Serializable {
                 int counter = 0;
                 // we search for a table which contains that column name
                 for (Table t : usedTables.values()) {
-                    Column tmpCol = t.getColumn(colName);
+                    AbstractColumn tmpCol = t.getColumn(colName);
                     if (tmpCol != null) {
                         selectedTable = t;
                         counter++;
@@ -271,7 +284,7 @@ public class DatabaseEngine implements Serializable {
     }
 
     protected void evaluateGrantToTable(Grant grant) throws SqlSemanticException {
-        BiConsumer<Column, Name> addGrant;
+        BiConsumer<AbstractColumn, Name> addGrant;
         switch (grant.getType()) {
             case READ:
                 addGrant = (col, role) -> _grants.grantRead(col, role);
@@ -289,18 +302,18 @@ public class DatabaseEngine implements Serializable {
         }
 
         final Name colName = grant.getColumn();
-        Collection<Column> colsToGrant;
+        Collection<AbstractColumn> colsToGrant;
         if (colName == null) {
             colsToGrant = table.getColumns();
         } else {
-            Column col = table.getColumn(colName);
+            AbstractColumn col = table.getColumn(colName);
             if (col == null) {
                 throw new SqlSemanticException("column '%s' does not exist in table '%s'", colName, grant.getTable());
             }
             colsToGrant = new ArrayList<>();
             colsToGrant.add(col);
         }
-        for (Column col : colsToGrant) {
+        for (AbstractColumn col : colsToGrant) {
             addGrant.accept(col, grant.getTo());
         }
     }

@@ -2,7 +2,7 @@ package edu.purdue.dbSchema.utils;
 
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
-import edu.purdue.dbSchema.schema.Column;
+import edu.purdue.dbSchema.schema.AbstractColumn;
 import edu.purdue.dbSchema.schema.Name;
 import java.io.Serializable;
 import java.util.Collection;
@@ -37,7 +37,7 @@ public interface IDbGrants extends Serializable {
      * @return true if the grant was not already present.
      * @throws NullPointerException if a parameter is null.
      */
-    public boolean grantRead(Column column, Name to) throws NullPointerException;
+    public boolean grantRead(AbstractColumn column, Name to) throws NullPointerException;
 
     /**
      * Grants the write permission of one column to a role.
@@ -47,7 +47,7 @@ public interface IDbGrants extends Serializable {
      * @return true if the grant was not already present.
      * @throws NullPointerException if a parameter is null.
      */
-    public boolean grantWrite(Column column, Name to) throws NullPointerException;
+    public boolean grantWrite(AbstractColumn column, Name to) throws NullPointerException;
 
     /**
      * Checks if a user can read a set of columns.
@@ -59,7 +59,7 @@ public interface IDbGrants extends Serializable {
      * @throws UnauthorizedSqlException if the user has no permission to read
      * all the columns.
      */
-    public Set<Name> enforceRead(Name username, Collection<Column> columns) throws NullPointerException, UnauthorizedSqlException;
+    public Set<Name> enforceRead(Name username, Collection<AbstractColumn> columns) throws NullPointerException, UnauthorizedSqlException;
 
     /**
      * Checks if a user can write a set of columns.
@@ -71,6 +71,6 @@ public interface IDbGrants extends Serializable {
      * @throws UnauthorizedSqlException if the user has no permission to write
      * all the columns.
      */
-    public Set<Name> enforceWrite(Name username, Collection<Column> columns) throws NullPointerException, UnauthorizedSqlException;
+    public Set<Name> enforceWrite(Name username, Collection<AbstractColumn> columns) throws NullPointerException, UnauthorizedSqlException;
 
 }

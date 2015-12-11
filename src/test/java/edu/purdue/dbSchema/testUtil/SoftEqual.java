@@ -1,6 +1,7 @@
 package edu.purdue.dbSchema.testUtil;
 
-import edu.purdue.dbSchema.schema.Column;
+import edu.purdue.dbSchema.schema.AbstractColumn;
+import edu.purdue.dbSchema.schema.RealColumn;
 import edu.purdue.dbSchema.schema.Table;
 import java.util.Collection;
 import java.util.Iterator;
@@ -23,20 +24,20 @@ public class SoftEqual {
         columns(actualTable.getColumns(), expectedTable.getColumns());
     }
 
-    public static void column(Column actualCol, Column expectedCol) {
+    public static void column(RealColumn actualCol, RealColumn expectedCol) {
         assertThat(actualCol.getName(), is(expectedCol.getName()));
         assertThat(actualCol.getType(), is(expectedCol.getType()));
         assertThat(actualCol.isNotNull(), is(expectedCol.isNotNull()));
         assertThat(actualCol.isUnique(), is(expectedCol.isUnique()));
     }
 
-    public static void columns(final Collection<Column> actualCols, final Collection<Column> expectedCols) {
+    public static void columns(final Collection<AbstractColumn> actualCols, final Collection<AbstractColumn> expectedCols) {
         assertThat(actualCols, hasSize(expectedCols.size()));
-        Iterator<Column> actualIt = actualCols.iterator();
-        Iterator<Column> expectedIt = expectedCols.iterator();
+        Iterator<AbstractColumn> actualIt = actualCols.iterator();
+        Iterator<AbstractColumn> expectedIt = expectedCols.iterator();
 
         while (expectedIt.hasNext() & actualIt.hasNext()) {
-            column(actualIt.next(), expectedIt.next());
+            column((RealColumn) actualIt.next(), (RealColumn) expectedIt.next());
         }
     }
 

@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -15,7 +16,7 @@ import java.util.TreeMap;
 public class Table implements Serializable {
 
     private final Name _name;
-    private final Map<Name, Column> _cols;
+    private final Map<Name, AbstractColumn> _cols;
 
     /**
      * Creates a table with the specified name.
@@ -34,10 +35,10 @@ public class Table implements Serializable {
      * @param alias the name of this virtual table.
      * @param columns the columns to use;
      */
-    Table(Name alias, Collection<Column> columns) {
+    Table(Name alias, Collection<AbstractColumn> columns) {
         _name = alias;
         _cols = new TreeMap<>();
-        for (Column col : columns) {
+        for (AbstractColumn col : columns) {
             _cols.put(col.getName(), col);
         }
     }
@@ -60,8 +61,14 @@ public class Table implements Serializable {
         if (_cols.containsKey(normalizedName)) {
             throw new SqlSemanticException("column '%s' specified more than once", name);
         }
-        Column col = new Column(normalizedName, type, notNull, unique, this);
+        RealColumn col = new RealColumn(normalizedName, type, notNull, unique, this);
         _cols.put(normalizedName, col);
+        return this;
+    }
+
+    public Table addVirtualColumn(String name, Set<AbstractColumn> mappedTo) {
+        Name colName = new Name(name);
+        _cols.put(colName, new VirtualColumn(this, colName, mappedTo));
         return this;
     }
 
@@ -80,7 +87,7 @@ public class Table implements Serializable {
      *
      * @return the columns.
      */
-    public Collection<Column> getColumns() {
+    public Collection<AbstractColumn> getColumns() {
         return Collections.unmodifiableCollection(_cols.values());
     }
 
@@ -104,7 +111,7 @@ public class Table implements Serializable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE TABLE ").append(_name).append(" (\n");
-        for (Column col : _cols.values()) {
+        for (AbstractColumn col : _cols.values()) {
             sb.append(col.toString()).append(",\n");
         }
         sb.append(");");
@@ -119,7 +126,7 @@ public class Table implements Serializable {
      * @throws NullPointerException if name is null.
      * @throws IllegalArgumentException if name is empty.
      */
-    public Column getColumn(Name name) throws IllegalArgumentException, NullPointerException {
+    public AbstractColumn getColumn(Name name) throws IllegalArgumentException, NullPointerException {
         if (name == null) {
             throw new NullPointerException();
         }
@@ -135,7 +142,8 @@ public class Table implements Serializable {
      * @throws NullPointerException if name is null.
      * @throws IllegalArgumentException if name is empty.
      */
-    public Column getColumn(String name) throws IllegalArgumentException, NullPointerException {
+    public AbstractColumn getColumn(String name) throws IllegalArgumentException, NullPointerException {
         return getColumn(new Name(name));
     }
+
 }

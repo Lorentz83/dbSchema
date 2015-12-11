@@ -17,6 +17,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
@@ -181,7 +182,7 @@ public class DatabaseEngineTest {
         usedTables.put(new Name("tbl"), tbl1);
         usedTables.put(new Name("tbl2"), tbl2);
         List<StringPair> selectedCols;
-        ArrayList<Column> cols;
+        ArrayList<AbstractColumn> cols;
 
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl2", "id"));
@@ -214,7 +215,7 @@ public class DatabaseEngineTest {
         usedTables.put(new Name("tbl"), tbl1);
         usedTables.put(new Name("tbl2"), tbl2);
 
-        ArrayList<Column> cols;
+        ArrayList<AbstractColumn> cols;
         ArrayList<StringPair> selectedCols;
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl", "*"));
@@ -222,12 +223,12 @@ public class DatabaseEngineTest {
         cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
         assertThat(cols, containsInAnyOrder(tbl1.getColumns().toArray()));
 
-        ArrayList<Column> expectedCols;
+        ArrayList<AbstractColumn> expectedCols;
 
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("", "*"));
         cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
-        expectedCols = new ArrayList<Column>();
+        expectedCols = new ArrayList<AbstractColumn>();
         expectedCols.addAll(tbl1.getColumns());
         expectedCols.addAll(tbl2.getColumns());
         assertThat(cols, containsInAnyOrder(expectedCols.toArray()));
@@ -236,7 +237,7 @@ public class DatabaseEngineTest {
         selectedCols.add(new StringPair("tbl", "id"));
         selectedCols.add(new StringPair("tbl", "*"));
         cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
-        expectedCols = new ArrayList<Column>();
+        expectedCols = new ArrayList<AbstractColumn>();
         expectedCols.addAll(tbl1.getColumns());
         expectedCols.add(tbl1.getColumn("id"));
         assertThat(cols, containsInAnyOrder(expectedCols.toArray()));
@@ -250,8 +251,8 @@ public class DatabaseEngineTest {
         _select.addMainColumn("t2", "f2");
         QueryFeature res = _testDb.evaluateDlmQuery(_select, null, Collections.<Name, Table>emptyMap());
 
-        Column c1 = _testDb.getTable("tbl1").getColumn("id");
-        Column c2 = _testDb.getTable("tbl2").getColumn("f2");
+        AbstractColumn c1 = _testDb.getTable("tbl1").getColumn("id");
+        AbstractColumn c2 = _testDb.getTable("tbl2").getColumn("f2");
         assertThat(res.getRoles(), empty());
         assertThat(res.getFilteredCols(), empty());
         assertThat(res.getUsedCols(), containsInAnyOrder(c1, c2));
@@ -296,4 +297,18 @@ public class DatabaseEngineTest {
         oos.writeObject(_testDb);
     }
 
+    @Test
+    public void parse_subQueryInFrom() throws Exception {
+        _testDb.parse("GRANT SELECT ON tbl1 TO user");
+        _testDb.parse("GRANT SELECT ON tbl2 TO user");
+
+        AbstractColumn tbl2id = _testDb.getTable("tbl2").getColumn("id");
+        AbstractColumn tbl1id = _testDb.getTable("tbl1").getColumn("id");
+
+        QueryFeature feature = _testDb.parse("select tbl1.id, t2.s from (select sum(tbl2.id) as s from tbl2 where tbl2.id>0) as t2, tbl1", "user").get(0);
+        assertThat(feature.getRoles(), contains("user"));
+        assertThat(feature.getFilteredCols(), contains(tbl2id));
+        assertThat(feature.getType(), is(DlmQueryType.SELECT));
+        assertThat(feature.getUsedCols(), containsInAnyOrder(tbl1id, tbl2id));
+    }
 }

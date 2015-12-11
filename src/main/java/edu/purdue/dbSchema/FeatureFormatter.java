@@ -1,6 +1,6 @@
 package edu.purdue.dbSchema;
 
-import edu.purdue.dbSchema.schema.Column;
+import edu.purdue.dbSchema.schema.AbstractColumn;
 import edu.purdue.dbSchema.schema.QueryFeature;
 import edu.purdue.dbSchema.schema.Table;
 import java.io.PrintStream;
@@ -16,14 +16,14 @@ import java.util.List;
 public class FeatureFormatter {
 
     private final PrintStream _out;
-    private final List<Column> _columns;
+    private final List<AbstractColumn> _columns;
     private final String _separator = ", ";
 
     FeatureFormatter(Collection<Table> tables, PrintStream out) {
         _out = out;
         _columns = new ArrayList<>();
         for (Table t : tables) {
-            for (Column c : t.getColumns()) {
+            for (AbstractColumn c : t.getColumns()) {
                 _columns.add(c);
             }
         }
@@ -31,7 +31,7 @@ public class FeatureFormatter {
 
     void header() {
         _out.print("type" + _separator);
-        for (Column c : _columns) {
+        for (AbstractColumn c : _columns) {
             _out.print(c.getTable().getName().getName() + "." + c.getName().getName() + _separator);
         }
         _out.println();
@@ -39,8 +39,8 @@ public class FeatureFormatter {
 
     void format(QueryFeature feature) {
         _out.print(feature.getType().toString().charAt(0) + _separator);
-        for (Column c : _columns) {
-            HashSet<Column> usedCols = new HashSet<>();
+        for (AbstractColumn c : _columns) {
+            HashSet<AbstractColumn> usedCols = new HashSet<>();
             usedCols.addAll(feature.getUsedCols());
             usedCols.addAll(feature.getFilteredCols());
 

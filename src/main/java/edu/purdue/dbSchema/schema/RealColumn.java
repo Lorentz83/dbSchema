@@ -9,13 +9,11 @@ import java.io.Serializable;
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
-public class Column implements Serializable {
+public class RealColumn extends AbstractColumn implements Serializable {
 
-    private final Name _name;
     private final String _type;
     private final boolean _notNull;
     private final boolean _unique;
-    private final Table _table;
 
     /**
      * Creates a column.
@@ -28,22 +26,17 @@ public class Column implements Serializable {
      * @throws NullPointerException if name or type are null.
      * @throws IllegalArgumentException if name or type are empty.
      */
-    Column(Name name, String type, boolean notNull, boolean unique, Table table) throws NullPointerException, IllegalArgumentException {
+    RealColumn(Name name, String type, boolean notNull, boolean unique, Table table) throws NullPointerException, IllegalArgumentException {
+        super(table, name);
         if (name == null || type == null) {
             throw new NullPointerException("name or type");
         }
         if (type.isEmpty()) {
             throw new IllegalArgumentException("name or type");
         }
-        _name = name;
         _type = type;
         _notNull = notNull;
         _unique = unique;
-        _table = table;
-    }
-
-    public Name getName() {
-        return _name;
     }
 
     public String getType() {
@@ -69,34 +62,6 @@ public class Column implements Serializable {
             sb.append(' ').append("UNIQUE");
         }
         return sb.toString();
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 97 * hash + _name.hashCode();
-        hash = 97 * hash + (_table == null ? 0 : _table.getName().hashCode());
-        return hash;
-    }
-
-    /**
-     * Returns if another object is actually the same object of this.
-     *
-     * @param obj the object to compare.
-     * @return if obj == this.
-     */
-    @Override
-    public boolean equals(Object obj) {
-        return this == obj;
-    }
-
-    /**
-     * Returns the table this column belongs.
-     *
-     * @return a table.
-     */
-    public Table getTable() {
-        return _table;
     }
 
 }

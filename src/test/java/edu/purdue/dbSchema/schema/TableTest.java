@@ -59,7 +59,7 @@ public class TableTest {
         }
         tbl.addColumn("name2", "type", true, true);
 
-        List<Column> cols = new ArrayList(tbl.getColumns());
+        List<RealColumn> cols = new ArrayList(tbl.getColumns());
         assertThat(cols, hasSize(2));
         assertThat(cols.get(0).getName(), is(new Name("name1")));
         assertThat(cols.get(0).getType(), is("type"));
@@ -79,7 +79,7 @@ public class TableTest {
         Table tbl = new Table("name1");
         tbl.addColumn("name2", "type", true, true);
 
-        Collection<Column> cols = tbl.getColumns();
+        Collection<AbstractColumn> cols = tbl.getColumns();
         try {
             cols.clear();
             fail("Collection is not unmodifiable");
@@ -97,7 +97,7 @@ public class TableTest {
         Table tbl = new Table("name1");
         tbl.addColumn("name2", "type", true, true);
 
-        Column res;
+        AbstractColumn res;
         res = tbl.getColumn("name2");
         assertThat(res, not(nullValue()));
 
