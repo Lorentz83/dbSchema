@@ -105,4 +105,35 @@ public class HashMapSetTest {
         } catch (UnsupportedOperationException ex) {
         }
     }
+
+    @Test
+    public void keySet() {
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
+        ms.put("s1");
+        ms.put("s1", 1);
+        ms.put("s2", 1);
+        // these must not be returned
+        ms.contains("s3", 2);
+        ms.getSet("s4");
+
+        assertThat(ms.keySet(), containsInAnyOrder("s1", "s2"));
+    }
+
+    @Test
+    public void keySet_returnsUnmodifiable() {
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
+        try {
+            ms.keySet().add("hello");
+            fail("missing exception");
+        } catch (UnsupportedOperationException ex) {
+        }
+    }
+
+    @Test
+    public void isEmpty() {
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
+        assertThat(ms.isEmpty(), is(true));
+        ms.put("key");
+        assertThat(ms.isEmpty(), is(false));
+    }
 }

@@ -23,7 +23,8 @@ public interface IMapSet<K, V> extends Serializable {
     boolean contains(K key, V value) throws NullPointerException;
 
     /**
-     * Returns the unmodifiable set associated to the key.
+     * Returns the unmodifiable set associated to the key. If the key is not
+     * contained in this MapSet, an empty set is returned.
      *
      * @param key the key.
      * @return an unmodifiable set.
@@ -39,6 +40,31 @@ public interface IMapSet<K, V> extends Serializable {
      * @return true if the element was added (not already present in the set).
      * @throws NullPointerException if key or value is null;
      */
-    boolean put(K key, V value);
+    boolean put(K key, V value) throws NullPointerException;
+
+    /**
+     * Adds a key without any value. This is a simple placeholder to create an
+     * empty set.
+     *
+     * @param key
+     * @return true if the key was not already present.
+     * @throws NullPointerException if key is null;
+     */
+    boolean put(K key) throws NullPointerException;
+
+    /**
+     * Returns the unmodifiable set of keys contained in this MapSet.
+     *
+     * @return an unmodifiable set of keys.
+     */
+    Set<K> keySet();
+
+    /**
+     * Returns true if this MapSet is empty. This is a convenience method for
+     * keySet().isEmpty();
+     *
+     * @return true if this MapSet is empty.
+     */
+    boolean isEmpty();
 
 }

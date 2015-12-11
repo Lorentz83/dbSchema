@@ -16,14 +16,28 @@ import java.util.Set;
  */
 public class HashMapSet<K, V> implements IMapSet<K, V> {
 
-    private final Map<K, HashSet<V>> _mem = new HashMap<>();
+    private final Map<K, Set<V>> _mem = new HashMap<>();
+
+    @Override
+    public boolean put(K key) throws NullPointerException {
+        if (key == null) {
+            throw new NullPointerException();
+        }
+        Set<V> set = _mem.get(key);
+        if (set == null) {
+            set = new HashSet<>();
+            _mem.put(key, set);
+            return true;
+        }
+        return false;
+    }
 
     @Override
     public boolean put(K key, V value) throws NullPointerException {
         if (key == null || value == null) {
             throw new NullPointerException();
         }
-        HashSet<V> set = _mem.get(key);
+        Set<V> set = _mem.get(key);
         if (set == null) {
             set = new HashSet<>();
             _mem.put(key, set);
@@ -47,6 +61,16 @@ public class HashMapSet<K, V> implements IMapSet<K, V> {
         }
         Set<V> set = _mem.get(key);
         return set == null ? Collections.emptySet() : Collections.unmodifiableSet(set);
+    }
+
+    @Override
+    public Set<K> keySet() {
+        return Collections.unmodifiableSet(_mem.keySet());
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return _mem.keySet().isEmpty();
     }
 
 }

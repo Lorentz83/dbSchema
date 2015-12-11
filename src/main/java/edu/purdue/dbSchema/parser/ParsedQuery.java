@@ -1,5 +1,7 @@
 package edu.purdue.dbSchema.parser;
 
+import edu.purdue.dbSchema.utils.HashMapSet;
+import edu.purdue.dbSchema.utils.IMapSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +21,13 @@ public class ParsedQuery {
      * The query type.
      */
     public final DlmQueryType type;
+
+    /**
+     * Contains the aliases in the select. Every alias is mapped to a set of
+     * columns used to generate it. The set may be empty in case no real columns
+     * are used for this alias (i.e. select now() as "time")
+     */
+    public IMapSet<String, StringPair> virtualColumns = new HashMapSet<>();
 
     /**
      * Contains the main columns of a query. The columns returned by a select,
@@ -84,17 +93,20 @@ public class ParsedQuery {
      * @param table the table name or view if explicitly specified in the query
      * or empty string.
      * @param colName the column name.
+     * @return the StringPair representing the added column
      * @throws NullPointerException if colName or table is null.
      * @throws IllegalArgumentException if colName is empty.
      */
-    public void addMainColumn(String table, String colName) throws IllegalArgumentException, NullPointerException {
+    public StringPair addMainColumn(String table, String colName) throws IllegalArgumentException, NullPointerException {
         if (table == null || colName == null) {
             throw new NullPointerException();
         }
         if (colName.isEmpty()) {
             throw new IllegalArgumentException("Missing column name");
         }
-        mainColumns.add(new StringPair(table, colName));
+        StringPair pair = new StringPair(table, colName);
+        mainColumns.add(pair);
+        return pair;
     }
 
     /**

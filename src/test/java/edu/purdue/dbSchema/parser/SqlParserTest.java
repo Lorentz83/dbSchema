@@ -11,6 +11,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -101,7 +102,7 @@ public class SqlParserTest {
     @Test
     public void parse_FunctionInSelect() throws Exception {
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
-        p.parse("SELECT sum(a), abs(avg(b)), sum(tbl.c, 5), (2 * d) + e as fixed FROM tbl");
+        p.parse("SELECT sum(a), abs(avg(b)), sum(tbl.c, 5), (2 * d) + e, now()  as fixed FROM tbl");
 
         ParsedQuery query = p.getDmlQueries().get(0);
         assertThat(query.mainColumns, contains(new StringPair("", "a"),
@@ -128,14 +129,14 @@ public class SqlParserTest {
         assertThat(query.whereColumns, contains(new StringPair("", "a"), new StringPair("", "b"), new StringPair("tbl1", "a"), new StringPair("tbl2", "b")));
         assertThat(query.mainColumns, contains(new StringPair("", "*"), new StringPair("a", "f1")));
         assertThat(query.from, contains(new StringPair("tbl1", ""), new StringPair("tbl2", "t2"), new StringPair("tbl3", "")));
-        assertNoSubOrCombinedQueries(query);
+        assert_noSubQueries_noCombinedQueries_noVirtualColumns(query);
 
         query = queries.get(1);
         assertThat(query.type, is(DlmQueryType.SELECT));
         assertThat(query.whereColumns, contains(new StringPair("", "a")));
         assertThat(query.mainColumns, contains(new StringPair("", "*"), new StringPair("tblA", "col1")));
         assertThat(query.from, contains(new StringPair("tbl1", "tb1"), new StringPair("tbl2", "tblA")));
-        assertNoSubOrCombinedQueries(query);
+        assert_noSubQueries_noCombinedQueries(query);
     }
 
     @Test
@@ -151,7 +152,7 @@ public class SqlParserTest {
 
         assertThat(query.mainColumns, contains(new StringPair("", "c1"), new StringPair("", "c2")));
 
-        assertNoSubOrCombinedQueries(query);
+        assert_noSubQueries_noCombinedQueries_noVirtualColumns(query);
     }
 
     @Test
@@ -169,7 +170,7 @@ public class SqlParserTest {
         assertThat(query.from, contains(new StringPair("tbl1", "")));
         assertThat(query.mainColumns, contains(new StringPair("", "c1"), new StringPair("", "c2")));
 
-        assertNoSubOrCombinedQueries(query);
+        assert_noSubQueries_noCombinedQueries_noVirtualColumns(query);
     }
 
     @Test
@@ -186,7 +187,7 @@ public class SqlParserTest {
         assertThat(query.whereColumns, contains(new StringPair("tbl1", "c")));
         assertThat(query.mainColumns, hasSize(0));
 
-        assertNoSubOrCombinedQueries(query);
+        assert_noSubQueries_noCombinedQueries_noVirtualColumns(query);
     }
 
     @Test
@@ -203,7 +204,7 @@ public class SqlParserTest {
         assertThat(query.from, contains(new StringPair("tbl1", "")));
         assertThat(query.whereColumns, contains(new StringPair("", "c2")));
 
-        assertNoSubOrCombinedQueries(query);
+        assert_noSubQueries_noCombinedQueries_noVirtualColumns(query);
     }
 
     @Test
@@ -246,6 +247,35 @@ public class SqlParserTest {
     }
 
     @Test
+    public void parse_aliasInSelect_Star() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvpostgresql);
+        p.parse("select a.* from airline a");
+
+        ParsedQuery query = p.getDmlQueries().get(0);
+        assertThat(query.mainColumns, containsInAnyOrder(new StringPair("a", "*")));
+        assertThat(query.virtualColumns.keySet(), hasSize(0));
+    }
+
+    @Test
+    public void parse_aliasInSelect() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvpostgresql);
+        p.parse("select airline.al_name as name, (AL_IATTR01 + AL_IATTR02) as s, -AL_IATTR03 as neg, now() as time  from airline");
+
+        ParsedQuery query = p.getDmlQueries().get(0);
+        assertThat(query.mainColumns, containsInAnyOrder(
+                new StringPair("airline", "al_name"),
+                new StringPair("", "AL_IATTR01"),
+                new StringPair("", "AL_IATTR02"),
+                new StringPair("", "AL_IATTR03")
+        ));
+        assertThat(query.virtualColumns.keySet(), hasSize(4));
+        assertThat(query.virtualColumns.getSet("name"), containsInAnyOrder(new StringPair("airline", "al_name")));
+        assertThat(query.virtualColumns.getSet("s"), containsInAnyOrder(new StringPair("", "AL_IATTR01"), new StringPair("", "AL_IATTR02")));
+        assertThat(query.virtualColumns.getSet("neg"), containsInAnyOrder(new StringPair("", "AL_IATTR03")));
+        assertThat(query.virtualColumns.getSet("time"), hasSize(0));
+    }
+
+    @Test
     public void parse_subQueries() throws Exception {
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
         p.parse("SELECT f1, t3.f, (select count(*) from t1 where f1 = t2.f) as c FROM t2, (select * from tbl3) as t3 where f1 in (select l from t4)");
@@ -270,27 +300,32 @@ public class SqlParserTest {
         assertThat(sub.mainColumns, contains(new StringPair("", "*")));
         assertThat(sub.from, contains(new StringPair("t1", "")));
         assertThat(sub.whereColumns, contains(new StringPair("", "f1"), new StringPair("t2", "f")));
-        assertNoSubOrCombinedQueries(sub);
+        assert_noSubQueries_noCombinedQueries(sub);
 
         sub = query.subQueriesFrom.get("t3");
         assertThat(sub.type, is(DlmQueryType.SELECT));
         assertThat(sub.mainColumns, contains(new StringPair("", "*")));
         assertThat(sub.from, contains(new StringPair("tbl3", "")));
         assertThat(sub.whereColumns, empty());
-        assertNoSubOrCombinedQueries(sub);
+        assert_noSubQueries_noCombinedQueries_noVirtualColumns(sub);
 
         sub = query.subQueriesWhere.get(0);
         assertThat(sub.type, is(DlmQueryType.SELECT));
         assertThat(sub.mainColumns, contains(new StringPair("", "l")));
         assertThat(sub.from, contains(new StringPair("t4", "")));
         assertThat(sub.whereColumns, empty());
-        assertNoSubOrCombinedQueries(sub);
+        assert_noSubQueries_noCombinedQueries_noVirtualColumns(sub);
     }
 
-    private void assertNoSubOrCombinedQueries(ParsedQuery query) {
+    private void assert_noSubQueries_noCombinedQueries(ParsedQuery query) {
         assertThat(query.subQueriesFrom, anEmptyMap());
         assertThat(query.subQueriesSelect, empty());
         assertThat(query.subQueriesWhere, empty());
         assertThat(query.nextCombinedQuery, nullValue());
+    }
+
+    private void assert_noSubQueries_noCombinedQueries_noVirtualColumns(ParsedQuery query) {
+        assert_noSubQueries_noCombinedQueries(query);
+        assertThat(query.virtualColumns.isEmpty(), is(true));
     }
 }

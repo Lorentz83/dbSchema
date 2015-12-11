@@ -210,9 +210,10 @@ public class SqlParser {
      *
      * @param expression the expression in the SELECT clause.
      * @param query the ParsedQuery to be constructed.
+     * @param alias the alias of the current column or empty string.
      * @throws UnsupportedSqlException in case of error in the sub-query.
      */
-    private void addColumnsName(TExpression expression, ParsedQuery query) throws UnsupportedSqlException {
+    private void addColumnsName(TExpression expression, ParsedQuery query, String alias) throws UnsupportedSqlException {
         if (expression == null) {
             return;
         }
@@ -221,28 +222,35 @@ public class SqlParser {
             // we currently ignore the schema
             String colName = complexName.getColumnNameOnly();
             String tblName = complexName.getTableString();
-            query.addMainColumn(tblName, colName);
+            StringPair col = query.addMainColumn(tblName, colName);
+            if (!alias.isEmpty()) {
+                query.virtualColumns.put(alias, col);
+            }
         } else { // if it is not a col name, go recursively
             TFunctionCall functionCall = expression.getFunctionCall();
             if (functionCall != null) { //this is a function call i.e. sum(tbl)
                 switch (functionCall.getFunctionType()) {
                     case cast_t:
                     case extract_t:
-                        addColumnsName(functionCall.getExpr1(), query);
+                        addColumnsName(functionCall.getExpr1(), query, alias);
                         break;
                     default:
                         TExpressionList args = functionCall.getArgs();
-                        for (int j = 0; j < args.size(); j++) {
-                            addColumnsName(args.getExpression(j), query);
+                        if (args != null) {
+                            // there are function without arguments, like now()
+                            for (int j = 0; j < args.size(); j++) {
+                                addColumnsName(args.getExpression(j), query, alias);
+                            }
                         }
                 }
             }
             // in case of unary or binay expressions i.e. -col or col1 + col2
-            addColumnsName(expression.getLeftOperand(), query);
-            addColumnsName(expression.getRightOperand(), query);
+            addColumnsName(expression.getLeftOperand(), query, alias);
+            addColumnsName(expression.getRightOperand(), query, alias);
 
             TSelectSqlStatement subQuery = expression.getSubQuery();
             if (subQuery != null) {
+                // TODO: here we lose the alias
                 query.subQueriesSelect.add(analyzeSelectStmt(subQuery));
             }
         }
@@ -268,7 +276,11 @@ public class SqlParser {
             //select list
             for (int i = 0; i < pStmt.getResultColumnList().size(); i++) {
                 TResultColumn resultColumn = pStmt.getResultColumnList().getResultColumn(i);
-                addColumnsName(resultColumn.getExpr(), query);
+                String alias = resultColumn.getColumnAlias();
+                if (!alias.isEmpty()) {
+                    query.virtualColumns.put(alias);
+                }
+                addColumnsName(resultColumn.getExpr(), query, alias);
             }
 
             for (int i = 0; i < pStmt.joins.size(); i++) {
