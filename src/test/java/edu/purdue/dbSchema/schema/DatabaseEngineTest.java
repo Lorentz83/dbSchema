@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.hasToString;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import org.junit.Before;
@@ -122,11 +123,11 @@ public class DatabaseEngineTest {
                 .addColumn("id", "int", true, true);
         usedTables.put(new Name("tbl1"), tbl1);
         List<StringPair> selectedCols;
-
+        List<AbstractColumn> retVal = new ArrayList<>();
         try {
             selectedCols = new ArrayList<>();
             selectedCols.add(new StringPair("", "C"));
-            DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
+            DatabaseEngine.addSelectedColumn(usedTables, selectedCols, retVal);
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("column 'C' does not exist"));
@@ -134,7 +135,7 @@ public class DatabaseEngineTest {
         try {
             selectedCols = new ArrayList<>();
             selectedCols.add(new StringPair("tbl1", "C"));
-            DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
+            DatabaseEngine.addSelectedColumn(usedTables, selectedCols, retVal);
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("column 'C' does not exist"));
@@ -142,7 +143,7 @@ public class DatabaseEngineTest {
         try {
             selectedCols = new ArrayList<>();
             selectedCols.add(new StringPair("tblX", "C"));
-            DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
+            DatabaseEngine.addSelectedColumn(usedTables, selectedCols, retVal);
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("missing FROM-clause entry for table 'tblX'"));
@@ -159,10 +160,12 @@ public class DatabaseEngineTest {
         usedTables.put(tbl1.getName(), tbl1);
         usedTables.put(tbl2.getName(), tbl2);
         List<StringPair> selectedCols;
+        List<AbstractColumn> retVal = new ArrayList<>();
+
         try {
             selectedCols = new ArrayList<>();
             selectedCols.add(new StringPair("", "id"));
-            DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
+            DatabaseEngine.addSelectedColumn(usedTables, selectedCols, retVal);
             fail("missing exception");
         } catch (SqlSemanticException ex) {
             assertThat(ex.getMessage(), is("column reference 'id' is ambiguous"));
@@ -182,25 +185,31 @@ public class DatabaseEngineTest {
         usedTables.put(new Name("tbl"), tbl1);
         usedTables.put(new Name("tbl2"), tbl2);
         List<StringPair> selectedCols;
-        ArrayList<AbstractColumn> cols;
+        ArrayList<AbstractColumn> colsReturned = new ArrayList<>();
+        int ret;
 
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl2", "id"));
-        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
-        assertThat(cols, hasSize(1));
-        assertThat(cols.get(0), sameInstance(tbl2.getColumn("id")));
+        ret = DatabaseEngine.addSelectedColumn(usedTables, selectedCols, colsReturned);
+        assertThat(colsReturned, hasSize(1));
+        assertThat(ret, is(1));
+        assertThat(colsReturned.get(0), sameInstance(tbl2.getColumn("id")));
 
+        colsReturned.clear();
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("", "B1"));
-        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
-        assertThat(cols, hasSize(1));
-        assertThat(cols.get(0), sameInstance(tbl2.getColumn("B1")));
+        ret = DatabaseEngine.addSelectedColumn(usedTables, selectedCols, colsReturned);
+        assertThat(colsReturned, hasSize(1));
+        assertThat(ret, is(1));
+        assertThat(colsReturned.get(0), sameInstance(tbl2.getColumn("B1")));
 
+        colsReturned.clear();
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl", "A1"));
-        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
-        assertThat(cols, hasSize(1));
-        assertThat(cols.get(0), sameInstance(tbl1.getColumn("A1")));
+        ret = DatabaseEngine.addSelectedColumn(usedTables, selectedCols, colsReturned);
+        assertThat(colsReturned, hasSize(1));
+        assertThat(ret, is(1));
+        assertThat(colsReturned.get(0), sameInstance(tbl1.getColumn("A1")));
     }
 
     @Test
@@ -215,28 +224,30 @@ public class DatabaseEngineTest {
         usedTables.put(new Name("tbl"), tbl1);
         usedTables.put(new Name("tbl2"), tbl2);
 
-        ArrayList<AbstractColumn> cols;
         ArrayList<StringPair> selectedCols;
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl", "*"));
+        ArrayList<AbstractColumn> cols = new ArrayList<>();
 
-        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
+        DatabaseEngine.addSelectedColumn(usedTables, selectedCols, cols);
         assertThat(cols, containsInAnyOrder(tbl1.getColumns().toArray()));
 
         ArrayList<AbstractColumn> expectedCols;
 
+        cols.clear();
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("", "*"));
-        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
+        DatabaseEngine.addSelectedColumn(usedTables, selectedCols, cols);
         expectedCols = new ArrayList<AbstractColumn>();
         expectedCols.addAll(tbl1.getColumns());
         expectedCols.addAll(tbl2.getColumns());
         assertThat(cols, containsInAnyOrder(expectedCols.toArray()));
 
+        cols.clear();
         selectedCols = new ArrayList<>();
         selectedCols.add(new StringPair("tbl", "id"));
         selectedCols.add(new StringPair("tbl", "*"));
-        cols = DatabaseEngine.getSelectedColumns(usedTables, selectedCols);
+        DatabaseEngine.addSelectedColumn(usedTables, selectedCols, cols);
         expectedCols = new ArrayList<AbstractColumn>();
         expectedCols.addAll(tbl1.getColumns());
         expectedCols.add(tbl1.getColumn("id"));
@@ -306,9 +317,9 @@ public class DatabaseEngineTest {
         AbstractColumn tbl1id = _testDb.getTable("tbl1").getColumn("id");
 
         QueryFeature feature = _testDb.parse("select tbl1.id, t2.s from (select sum(tbl2.id) as s from tbl2 where tbl2.id>0) as t2, tbl1", "user").get(0);
-        assertThat(feature.getRoles(), contains("user"));
+        assertThat(feature.getRoles(), contains(new Name("user")));
         assertThat(feature.getFilteredCols(), contains(tbl2id));
         assertThat(feature.getType(), is(DlmQueryType.SELECT));
-        assertThat(feature.getUsedCols(), containsInAnyOrder(tbl1id, tbl2id));
+        assertThat(feature.getUsedCols(), containsInAnyOrder(is(tbl1id), is(tbl2id), hasToString("s")));
     }
 }

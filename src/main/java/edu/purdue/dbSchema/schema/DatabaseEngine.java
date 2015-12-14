@@ -114,7 +114,11 @@ public class DatabaseEngine implements Serializable {
 
             Table virtualTable = new Table(alias, qf.getUsedCols());
             for (String virtualCol : sub.virtualColumns.keySet()) {
-                virtualTable.addVirtualColumn(virtualCol, null);
+                Set<AbstractColumn> mappedTo = new HashSet<>();
+                for (StringPair subCol : sub.virtualColumns.getSet(virtualCol)) {
+                    addSelectedColumn(usedTables, parsed.whereColumns, mappedTo);
+                }
+                virtualTable.addVirtualColumn(virtualCol, mappedTo);
             }
             if (virtualTables.put(alias, virtualTable) != null) {
                 throw new SqlSemanticException("table name '%s' specified more than once", alias);
@@ -135,8 +139,10 @@ public class DatabaseEngine implements Serializable {
         }
 
         // current query
-        ArrayList<AbstractColumn> select = getSelectedColumns(usedTables, parsed.mainColumns);
-        ArrayList<AbstractColumn> where = getSelectedColumns(usedTables, parsed.whereColumns);
+        ArrayList<AbstractColumn> select = new ArrayList<>();
+        addSelectedColumn(usedTables, parsed.mainColumns, select);
+        ArrayList<AbstractColumn> where = new ArrayList<>();
+        addSelectedColumn(usedTables, parsed.whereColumns, where);
         Set<Name> usedRoles = enforceRoles(userName, parsed.type, select, where);
         features.add(new QueryFeature(parsed.type, select, where, usedRoles));
 
@@ -177,17 +183,18 @@ public class DatabaseEngine implements Serializable {
     }
 
     /**
-     * Returns a list of selected mainColumns.
+     * Adds the selected mainColumns to a provided list.
      *
      * @param usedTables the tables (with aliases) to search for mainColumns.
      * @param selectedCols a pair of (table name, column name) where the table
      * name may be empty.
-     * @return a list of Columns used.
+     * @param retVal the collection where the new columns are going to be added.
+     * @return the number of column added.
      * @throws SqlSemanticException if a column is referenced more than once, if
      * a column name is ambiguous or if a column reference a missing table
      */
-    protected static ArrayList<AbstractColumn> getSelectedColumns(final HashMap<Name, Table> usedTables, final List<StringPair> selectedCols) throws SqlSemanticException {
-        ArrayList<AbstractColumn> usedCols = new ArrayList<>();
+    protected static int addSelectedColumn(final HashMap<Name, Table> usedTables, final List<StringPair> selectedCols, Collection<AbstractColumn> retVal) throws SqlSemanticException {
+        int initialSize = retVal.size();
         for (StringPair select : selectedCols) {
             String tblName = select.first; //may be empty
             String colName = select.second;
@@ -197,7 +204,7 @@ public class DatabaseEngine implements Serializable {
             if (tblName.isEmpty()) { // we miss the table name
                 if (colName.equals("*")) { //select *
                     for (Table t : usedTables.values()) {
-                        usedCols.addAll(t.getColumns());
+                        retVal.addAll(t.getColumns());
                     }
                     continue;
                 }
@@ -220,7 +227,7 @@ public class DatabaseEngine implements Serializable {
                     throw new SqlSemanticException("missing FROM-clause entry for table '%s'", tblName);
                 }
                 if (colName.equals("*")) { //select *
-                    usedCols.addAll(selectedTable.getColumns());
+                    retVal.addAll(selectedTable.getColumns());
                     continue;
                 }
                 selectedCol = selectedTable.getColumn(colName);
@@ -228,9 +235,9 @@ public class DatabaseEngine implements Serializable {
             if (selectedCol == null) {
                 throw new SqlSemanticException("column '%s' does not exist", colName);
             }
-            usedCols.add(selectedCol);
+            retVal.add(selectedCol);
         }
-        return usedCols;
+        return retVal.size() - initialSize;
     }
 
     /**

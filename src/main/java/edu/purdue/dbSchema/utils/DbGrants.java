@@ -57,11 +57,13 @@ public class DbGrants implements IDbGrants {
     private Set<Name> enforce(IMapSet<AbstractColumn, Name> grant, Name username, Collection<AbstractColumn> columns, String errorMsg) throws NullPointerException, UnauthorizedSqlException {
         Set<Name> usedRoles = new HashSet<>();
         for (AbstractColumn col : columns) {
-            Name role = hasGrant(grant, username, col);
-            if (role == null) {
-                throw new UnauthorizedSqlException("the user '%s' has no right to %s '%s'", username, errorMsg, col.getName());
+            if (!col.isVirtual()) {
+                Name role = hasGrant(grant, username, col);
+                if (role == null) {
+                    throw new UnauthorizedSqlException("the user '%s' has no right to %s '%s'", username, errorMsg, col.getName());
+                }
+                usedRoles.add(role);
             }
-            usedRoles.add(role);
         }
         return usedRoles;
     }

@@ -16,6 +16,7 @@ import static org.hamcrest.Matchers.empty;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.hasToString;
 import static org.junit.Assert.assertThat;
 import org.junit.Ignore;
 
@@ -60,7 +61,7 @@ public class IntegrationTest {
 
         sql += "select al_name from \"AIRLINE\" WHERE al_id in (SELECT f_al_id from \"FLIGHT\" where f_arrive_time = f_depart_time ); ";
         sql += "select al_name, (select count(f_id) from \"FLIGHT\" where f_al_id = al_id ) from \"AIRLINE\"; ";
-        sql += "select sub.name from (select al_name as name, count(*) as num from \"AIRLINE\" group by al_name) as sub; ";
+        sql += "select sub.name from (select al_name as name, count(al_id) as num from \"AIRLINE\" group by al_name) as sub; ";
 
         List<QueryFeature> res = db.parse(sql, username);
         QueryFeature feature;
@@ -78,9 +79,26 @@ public class IntegrationTest {
 
         feature = res.get(2);
         assertThat(feature.getType(), is(DlmQueryType.SELECT));
-        assertThat(feature.getUsedCols(), containsInAnyOrder(airline.getColumn("al_name")));
+        assertThat(feature.getUsedCols(), containsInAnyOrder(is(airline.getColumn("al_name")), is(airline.getColumn("al_id")), hasToString("name")));
         assertThat(feature.getFilteredCols(), empty());
 
+    }
+
+    @Test
+    @Ignore("todo")
+    public void defineVirtualColumn() {
+        /**
+         * TODO here we should decide how to define and deal with abstract
+         * columns:
+         *
+         * select a, sum (b+c), -a are -a and sum(b+c) abstracts? currently they
+         * are not
+         *
+         * but currently * select a, s from tbl, (select b+c from tbl) as t2
+         *
+         * returns 3 real columns (a, b, c) and the virtual s.
+         *
+         */
     }
 
     @Test

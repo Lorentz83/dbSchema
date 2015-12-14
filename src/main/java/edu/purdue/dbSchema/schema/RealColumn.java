@@ -64,4 +64,8 @@ public class RealColumn extends AbstractColumn implements Serializable {
         return sb.toString();
     }
 
+    @Override
+    public boolean isVirtual() {
+        return false;
+    }
 }

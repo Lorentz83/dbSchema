@@ -7,7 +7,7 @@ package edu.purdue.dbSchema.schema;
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
-public class AbstractColumn {
+public abstract class AbstractColumn {
 
     protected final Table _table;
     protected final Name _name;
@@ -56,4 +56,6 @@ public class AbstractColumn {
     public Table getTable() {
         return _table;
     }
+
+    abstract public boolean isVirtual();
 }

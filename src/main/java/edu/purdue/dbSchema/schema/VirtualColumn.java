@@ -27,4 +27,9 @@ public class VirtualColumn extends AbstractColumn {
         Set<AbstractColumn> _mappedTo = Collections.unmodifiableSet(new HashSet<>(mappedTo));
     }
 
+    @Override
+    public boolean isVirtual() {
+        return true;
+    }
+
 }

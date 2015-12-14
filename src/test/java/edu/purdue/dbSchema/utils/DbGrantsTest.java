@@ -5,6 +5,7 @@ import edu.purdue.dbSchema.erros.UnauthorizedSqlException;
 import edu.purdue.dbSchema.schema.AbstractColumn;
 import edu.purdue.dbSchema.schema.Name;
 import edu.purdue.dbSchema.schema.Table;
+import edu.purdue.dbSchema.schema.VirtualColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,8 +54,8 @@ public class DbGrantsTest {
     }
 
     @Test
-    public void enforceRead() throws Exception {
-        Set<Name> roles = _grants.enforceRead(new Name("user1"), collection(_col1));
+    public void enforceRead_doesNotConsiderVirtualColumns() throws Exception {
+        Set<Name> roles = _grants.enforceRead(new Name("user1"), collection(_col1, new VirtualColumn(_table1, new Name("vt"))));
         assertThat(roles, containsInAnyOrder(new Name("roleA")));
     }
 
