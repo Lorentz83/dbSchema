@@ -7,9 +7,11 @@ import edu.purdue.dbSchema.parser.Grant;
 import edu.purdue.dbSchema.parser.ParsedQuery;
 import edu.purdue.dbSchema.parser.StringPair;
 import gudusoft.gsqlparser.EDbVendor;
-import java.io.IOException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -297,15 +299,21 @@ public class DatabaseEngineTest {
     @Test
     public void isSerializable() throws Exception {
         _testDb.parse("create table tblnew(id int); grant select on tblnew to usernew");
-        ObjectOutputStream oos = new ObjectOutputStream(new OutputStream() {
-
-            @Override
-            public void write(int b) throws IOException {
-
+        File tmpFile = File.createTempFile("db_test_", ".tmp");
+        try {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(tmpFile))) {
+                oos.writeObject(_testDb);
             }
-        });
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(tmpFile))) {
+                DatabaseEngine db = (DatabaseEngine) ois.readObject();
 
-        oos.writeObject(_testDb);
+                assertThat(db.getTables().size(), is(_testDb.getTables().size()));
+            }
+
+        } catch (Exception ex) {
+            tmpFile.delete();
+            throw ex;
+        }
     }
 
     @Test
@@ -321,5 +329,18 @@ public class DatabaseEngineTest {
         assertThat(feature.getFilteredCols(), contains(tbl2id));
         assertThat(feature.getType(), is(DlmQueryType.SELECT));
         assertThat(feature.getUsedCols(), containsInAnyOrder(is(tbl1id), is(tbl2id), hasToString("s")));
+    }
+
+    @Test
+    public void parse_subQueryOverridesTable() throws Exception {
+        _testDb.parse("GRANT SELECT ON tbl1 TO user");
+
+        AbstractColumn tbl1id = _testDb.getTable("tbl1").getColumn("id");
+        AbstractColumn tbl1f = _testDb.getTable("tbl1").getColumn("f1");
+
+        QueryFeature feature = _testDb.parse("select id from tbl1 where f1 in (select f1 from tbl1 where id > 5)", "user").get(0);
+        assertThat(feature.getRoles(), contains(new Name("user")));
+        assertThat(feature.getFilteredCols(), contains(tbl1id, tbl1f));
+        assertThat(feature.getUsedCols(), containsInAnyOrder(tbl1id, tbl1f));
     }
 }

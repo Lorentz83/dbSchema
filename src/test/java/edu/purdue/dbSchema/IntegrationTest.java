@@ -49,6 +49,26 @@ public class IntegrationTest {
     }
 
     @Test
+    public void testError() throws Exception {
+        String username = "usr";
+        DatabaseEngine db = loadDb();
+        grantAll(db, username);
+
+        String sql = "select f_id from \"RESERVATION\", \"FLIGHT\"  "
+                + "where  r_f_id = f_id AND f_id IN ("
+                + "  select f_id"
+                + "  from  \"RESERVATION\", \"FLIGHT\", \"AIRPORT\" as dap, \"AIRPORT\" as aap"
+                + "  where f_depart_ap_id=dap.ap_id AND f_arrive_ap_id = aap.ap_id AND r_f_id=f_id AND extract(\"month\" from f_arrive_time) = 1"
+                + "  group by f_id"
+                + "  order by count(r_id) DESC limit 10"
+                + ")";
+
+        System.out.println(sql);
+        List<QueryFeature> res = db.parse(sql, username);
+
+    }
+
+    @Test
     public void subQueries() throws Exception {
         String username = "usr";
         DatabaseEngine db = loadDb();

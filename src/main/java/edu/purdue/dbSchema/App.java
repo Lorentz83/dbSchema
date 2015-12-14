@@ -38,11 +38,15 @@ public class App {
                 db = initDb(dbFileName, in);
                 System.out.println("Tables loaded: " + db.getTables().size());
                 break;
-            case "-db":
             case "--parse":
                 db = readDb(dbFileName);
                 in = (args.length < 3) ? System.in : new FileInputStream(args[2]);
                 parseLine(db, in);
+                break;
+            case "--feature":
+                db = readDb(dbFileName);
+                in = (args.length < 3) ? System.in : new FileInputStream(args[2]);
+                parseFeatureLine(db, in);
                 break;
             case "-i":
             case "--info":
@@ -97,6 +101,30 @@ public class App {
     static DatabaseEngine readDb(String dbStorage) throws IOException, ClassNotFoundException {
         try (ObjectInputStream o = new ObjectInputStream(new FileInputStream(dbStorage))) {
             return (DatabaseEngine) o.readObject();
+        }
+    }
+
+    private static void parseFeatureLine(DatabaseEngine db, InputStream in) throws IOException {
+        String line;
+        FeatureFormatter featureFormatter = new FeatureFormatter(db.getTables(), System.out);
+        featureFormatter.header();
+        try (BufferedReader bin = new BufferedReader(new InputStreamReader(in))) {
+            while ((line = bin.readLine()) != null) {
+                String[] split = line.split(":");
+                String role = split[0].trim();
+                String query = split[1].trim().replace("?", "1");
+                try {
+                    List<QueryFeature> features = db.parse(query, username);
+                    for (QueryFeature feature : features) {
+                        featureFormatter.format(feature, role);
+                    }
+                } catch (SqlParseException | UnsupportedSqlException | UnauthorizedSqlException | SqlSemanticException ex) {
+                    System.err.println(" --- Error parsing ---");
+                    System.err.println(query);
+                    ex.printStackTrace(System.err);
+                    System.err.println(" --- end error ---");
+                }
+            }
         }
     }
 

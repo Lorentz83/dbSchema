@@ -329,7 +329,7 @@ public class SqlParser {
 
             // limit clause
             if (pStmt.getLimitClause() != null) {
-                throw new UnsupportedSqlException("limit clause: " + pStmt.getLimitClause().toString());
+                LOGGER.log(Level.WARNING, "limit clause ignored");
             }
             return query;
         }
@@ -398,6 +398,12 @@ public class SqlParser {
                 TObjectName colName = conds.getObjectOperand();
                 query.addWhereColumn(colName.getTableString(), colName.getColumnNameOnly());
                 break;
+            case function_t:
+                TFunctionCall functionCall = conds.getFunctionCall();
+                evaluateWhereConditionsList(functionCall.getArgs(), query);
+                evaluateWhereConditionsIgnoringNull(functionCall.getExpr1(), query);
+                evaluateWhereConditionsIgnoringNull(functionCall.getExpr2(), query);
+                evaluateWhereConditionsIgnoringNull(functionCall.getExpr3(), query);
             case simple_constant_t: // nothing to do, it is a constant
             case list_t: //nothing to do, it is a list
                 break;
@@ -406,6 +412,19 @@ public class SqlParser {
         }
     }
 
+    private void evaluateWhereConditionsIgnoringNull(TExpression conds, ParsedQuery query) throws UnsupportedSqlException {
+        if (conds != null) {
+            evaluateWhereConditions(conds, query);
+        }
+    }
+
+    private void evaluateWhereConditionsList(TExpressionList exprList, ParsedQuery query) throws UnsupportedSqlException {
+        if (exprList != null) {
+            for (int n = 0; n < exprList.size(); n++) {
+                evaluateWhereConditions(exprList.getExpression(n), query);
+            }
+        }
+    }
     private final Pattern _grantRegex = Pattern.compile("GRANT +(?<what>\\w+)( +ON +(?<where>[\\w.]+))? +TO +(?<to>\\w+) *;?", Pattern.CASE_INSENSITIVE);
 
     private Grant analyzeGrantStmt(TCustomSqlStatement stmt) throws UnsupportedSqlException, SqlParseException {

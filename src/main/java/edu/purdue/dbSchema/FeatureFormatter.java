@@ -31,22 +31,38 @@ public class FeatureFormatter {
 
     void header() {
         _out.print("type" + _separator);
-        for (AbstractColumn c : _columns) {
-            _out.print(c.getTable().getName().getName() + "." + c.getName().getName() + _separator);
+        for (int n = 0; n < _columns.size(); n++) {
+            AbstractColumn c = _columns.get(n);
+            _out.print(c.getTable().getName().getName() + "." + c.getName().getName());
+            if (n < _columns.size() - 1) {
+                _out.print(_separator);
+            }
         }
         _out.println();
     }
 
-    void format(QueryFeature feature) {
-        _out.print(feature.getType().toString().charAt(0) + _separator);
-        for (AbstractColumn c : _columns) {
+    void format(QueryFeature feature, String extra) {
+        if (extra != null) {
+            _out.print(extra);
+            _out.print(": ");
+        }
+        //_out.print(feature.getType().toString().charAt(0) + _separator);
+        for (int n = 0; n < _columns.size(); n++) {
+            AbstractColumn c = _columns.get(n);
             HashSet<AbstractColumn> usedCols = new HashSet<>();
             usedCols.addAll(feature.getUsedCols());
             usedCols.addAll(feature.getFilteredCols());
 
             String val = usedCols.contains(c) ? "1" : "0";
-            _out.print(val + _separator);
+            _out.print(val);
+            if (n < _columns.size() - 1) {
+                _out.print(_separator);
+            }
         }
         _out.println();
+    }
+
+    void format(QueryFeature feature) {
+        format(feature, null);
     }
 }

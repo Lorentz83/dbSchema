@@ -1,7 +1,5 @@
 package edu.purdue.dbSchema.schema;
 
-import java.io.Serializable;
-
 /**
  * Represents a table column. This is an immutable object linked to the table
  * which created it. Equality on columns considers also the table they belong
@@ -9,7 +7,7 @@ import java.io.Serializable;
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
-public class RealColumn extends AbstractColumn implements Serializable {
+public class RealColumn extends AbstractColumn {
 
     private final String _type;
     private final boolean _notNull;

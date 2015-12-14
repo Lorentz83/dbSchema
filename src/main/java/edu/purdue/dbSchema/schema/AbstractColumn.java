@@ -1,5 +1,7 @@
 package edu.purdue.dbSchema.schema;
 
+import java.io.Serializable;
+
 /**
  * This is the base class to represent a column. In a database are present
  * actual columns and virtual columns. The former are container directly related
@@ -7,7 +9,7 @@ package edu.purdue.dbSchema.schema;
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
-public abstract class AbstractColumn {
+public abstract class AbstractColumn implements Serializable {
 
     protected final Table _table;
     protected final Name _name;

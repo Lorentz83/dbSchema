@@ -317,6 +317,25 @@ public class SqlParserTest {
         assert_noSubQueries_noCombinedQueries_noVirtualColumns(sub);
     }
 
+    @Test
+    public void parse_timeFunction() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvpostgresql);
+        p.parse("select f_id from \"FLIGHT\" where extract(\"month\" from f_arrive_time)=1");
+        ParsedQuery ret = p.getDmlQueries().get(0);
+        assertThat(ret.mainColumns, contains(new StringPair("", "f_id")));
+        assertThat(ret.whereColumns, contains(new StringPair("", "f_arrive_time")));
+    }
+
+    @Test
+    public void parse_Limit() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvpostgresql);
+        p.parse("select * from tbl LIMIT 10");
+        ParsedQuery ret = p.getDmlQueries().get(0);
+        assertThat(ret.mainColumns, contains(new StringPair("", "*")));
+        assertThat(ret.whereColumns, empty());
+        //TODO, should we report it?
+    }
+
     private void assert_noSubQueries_noCombinedQueries(ParsedQuery query) {
         assertThat(query.subQueriesFrom, anEmptyMap());
         assertThat(query.subQueriesSelect, empty());

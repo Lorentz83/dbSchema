@@ -270,7 +270,9 @@ public class DatabaseEngine implements Serializable {
                     tablesWithAlias.remove(name);
                     usedTables.remove(name);
                 } else {
-                    throw new SqlSemanticException("table name '%s' specified more than once", name);
+                    if (!additionalTables.containsKey(name)) { //subqueries override tables in the parent query
+                        throw new SqlSemanticException("table name '%s' specified more than once", name);
+                    }
                 }
             }
             if (!alias.isEmpty()) { // add the alias
