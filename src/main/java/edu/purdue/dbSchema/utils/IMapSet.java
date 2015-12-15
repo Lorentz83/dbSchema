@@ -46,7 +46,7 @@ public interface IMapSet<K, V> extends Serializable {
      * Adds a key without any value. This is a simple placeholder to create an
      * empty set.
      *
-     * @param key
+     * @param key the key.
      * @return true if the key was not already present.
      * @throws NullPointerException if key is null;
      */

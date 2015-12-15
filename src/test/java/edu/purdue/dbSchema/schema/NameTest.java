@@ -9,7 +9,7 @@ import org.junit.Test;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class NameTest {
 

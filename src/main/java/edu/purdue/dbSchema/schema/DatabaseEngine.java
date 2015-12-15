@@ -95,11 +95,12 @@ public class DatabaseEngine implements Serializable {
      * @param additionalTables additional tables to use to resolve the name.
      * I.e. tables used in the outer query.
      * @return the query feature set.
-     * @throws SqlSemanticException
-     * @throws NullPointerException
-     * @throws UnauthorizedSqlException
+     * @throws SqlSemanticException if the sql contains semantic errors or
+     * cannot be evaluated against the given schema.
+     * @throws UnauthorizedSqlException if the user does not have the required
+     * grants.
      */
-    protected QueryFeature evaluateDlmQuery(ParsedQuery parsed, Name userName, Map<Name, Table> additionalTables) throws SqlSemanticException, NullPointerException, UnauthorizedSqlException {
+    protected QueryFeature evaluateDlmQuery(ParsedQuery parsed, Name userName, Map<Name, Table> additionalTables) throws SqlSemanticException, UnauthorizedSqlException {
         HashMap<Name, Table> usedTables = filterTables(parsed.from, additionalTables);
         HashMap<Name, Table> virtualTables = new HashMap<>();
 

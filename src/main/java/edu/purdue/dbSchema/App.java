@@ -137,7 +137,7 @@ public class App {
                 try {
                     List<QueryFeature> features = db.parse(line, username);
                     for (QueryFeature feature : features) {
-                        featureFormatter.format(feature);
+                        featureFormatter.format(feature, "");
                     }
                 } catch (SqlParseException | UnsupportedSqlException | UnauthorizedSqlException | SqlSemanticException ex) {
                     System.err.println(" --- Error parsing ---");

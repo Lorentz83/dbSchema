@@ -22,7 +22,7 @@ import org.junit.Ignore;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class IntegrationTest {
 

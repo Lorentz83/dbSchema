@@ -10,7 +10,7 @@ import java.util.TreeSet;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class QueryFeature {
 

@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class FeatureFormatter {
 
@@ -30,6 +30,7 @@ public class FeatureFormatter {
     }
 
     void header() {
+        _out.print("role" + _separator);
         _out.print("type" + _separator);
         for (int n = 0; n < _columns.size(); n++) {
             AbstractColumn c = _columns.get(n);
@@ -41,12 +42,10 @@ public class FeatureFormatter {
         _out.println();
     }
 
-    void format(QueryFeature feature, String extra) {
-        if (extra != null) {
-            _out.print(extra);
-            _out.print(": ");
-        }
-        //_out.print(feature.getType().toString().charAt(0) + _separator);
+    void format(QueryFeature feature, String role) {
+        _out.print(role);
+        _out.print(_separator);
+        _out.print(feature.getType().toString().charAt(0) + _separator);
         for (int n = 0; n < _columns.size(); n++) {
             AbstractColumn c = _columns.get(n);
             HashSet<AbstractColumn> usedCols = new HashSet<>();
@@ -62,7 +61,4 @@ public class FeatureFormatter {
         _out.println();
     }
 
-    void format(QueryFeature feature) {
-        format(feature, null);
-    }
 }

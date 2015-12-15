@@ -6,7 +6,7 @@ import java.io.Serializable;
  * Represents an object name in the database. It contains code to getName the
  * names, therefore equality is case insensitive and ignores quotes.
  *
- * @author Lorenzo Bossi <lbossi@purdue.edu>
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class Name implements Comparable<Name>, Serializable {
 
