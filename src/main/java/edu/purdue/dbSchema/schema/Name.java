@@ -3,8 +3,9 @@ package edu.purdue.dbSchema.schema;
 import java.io.Serializable;
 
 /**
- * Represents an object name in the database. It contains code to getName the
- * names, therefore equality is case insensitive and ignores quotes.
+ * Represents the name of an object in the database. Most of the databases are
+ * case insensitive. This class contains the logic to normalize names (lowercase
+ * and without quotes) and to compare normalized names.
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */

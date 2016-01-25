@@ -111,10 +111,10 @@ public class IntegrationTest {
          * TODO here we should decide how to define and deal with abstract
          * columns:
          *
-         * select a, sum (b+c), -a are -a and sum(b+c) abstracts? currently they
-         * are not
+         * "select a, sum (b+c), -a" are -a and sum(b+c) abstracts? currently
+         * they are not
          *
-         * but currently * select a, s from tbl, (select b+c from tbl) as t2
+         * but "select a, s from tbl, (select b+c from tbl) as t2"
          *
          * returns 3 real columns (a, b, c) and the virtual s.
          *

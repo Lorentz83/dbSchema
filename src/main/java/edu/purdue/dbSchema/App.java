@@ -22,6 +22,11 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.LogManager;
 
+/**
+ * This is a simple test application.
+ *
+ * @author Lorenzo Bossi [lbossi@purdue.edu]
+ */
 public class App {
 
     private final static String username = "user";

@@ -1,11 +1,5 @@
 /**
- * Provides a simple SQL parser for extracting a set of features from queries.
- * Known bugs:
- * <ul>
- * <li>parse error without any message in case of unknown (not allowed?) data
- * type (i.e. double for postgres);</li>
- * <li>only read and write grants, currently it is impossible to distinguish
- * between update, insert and delete;</li>
- * </ul>
+ * Contains the entry point of the project. The main and the classes it requires
+ * are in this package. Everything here should not be considered stable.
  */
 package edu.purdue.dbSchema;

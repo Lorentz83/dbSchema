@@ -1,0 +1,31 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+    <head>
+        <title></title>
+    </head>
+    <body>
+        <p>
+            Provides a simple SQL parser for extracting a set of features from queries.
+        </p>
+        <p>
+            Known bugs:
+        </p>
+        <ul>
+            <li>only read and write grants, currently it is impossible to distinguish
+                between update, insert and delete;</li>
+        </ul>
+
+        <p>
+            TODO:
+        </p>
+        <ul>
+            <li>Implement selectivity.
+                For the purposes of this project, selectivity does not have to be very accurate, but it is important that
+                its error is consistent among different executions.
+                The idea is to have a rough evaluation of the percentage of data returned for every table in the query.</li>
+            <li>Implement views.</li>
+            <li>Update tables.</li>
+            <li>Names should be case sensitive according to the dbvendor.</li>
+        </ul>
+    </body>
+</html>

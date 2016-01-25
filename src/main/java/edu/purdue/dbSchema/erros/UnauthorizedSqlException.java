@@ -1,8 +1,8 @@
 package edu.purdue.dbSchema.erros;
 
 /**
- * Indicates an authorization error. Like when a user is trying to update a
- * column without having the permission.
+ * Thrown when an authorization error occurs. For example when a user is trying
+ * to update a column without having the permission.
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */

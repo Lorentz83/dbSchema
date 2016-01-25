@@ -1,8 +1,9 @@
 package edu.purdue.dbSchema.erros;
 
 /**
- * Indicates an error in the SQL semantic. Like trying to add a table that
- * already exists.
+ * Thrown when there is an error in the SQL semantic. For example it is thrown
+ * if trying to add a table when another with the same name already exists; if
+ * there is an ambiguous name reference or a referenced object does not exist.
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */

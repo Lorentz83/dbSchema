@@ -1,8 +1,7 @@
 package edu.purdue.dbSchema.erros;
 
 /**
- * Represents a condition when a SQL statement is valid but not understood by
- * this project.
+ * Thrown when a SQL statement is valid but not understood by this project.
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */

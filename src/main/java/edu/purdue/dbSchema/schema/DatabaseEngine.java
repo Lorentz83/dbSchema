@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
@@ -28,6 +27,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Contains the database engine. This class implements the logic to handle
+ * queries and to keep a representation of the database in memory.
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
@@ -39,6 +40,12 @@ public class DatabaseEngine implements Serializable {
     private final IDbGrants _grants;
     private final EDbVendor _dbVendor;
 
+    /**
+     * Creates a DatabaseEngine specifying the database vendor. The database
+     * vendor is required to enable the parser to recognize the SQL dialect.
+     *
+     * @param dbVendor the SQL dialect.
+     */
     public DatabaseEngine(EDbVendor dbVendor) {
         if (dbVendor == null) {
             throw new NullPointerException("dbVendor");
@@ -48,6 +55,25 @@ public class DatabaseEngine implements Serializable {
         _grants = new DbGrants();
     }
 
+    /**
+     * Extracts the features of a given SQL query. This method can handle only
+     * SELECT/UPDATE/DELETE/INSERT queries and is intended to extract a set of
+     * features to identify the user behavior. It can handle multiple queries.
+     * Note that a single query like
+     * <code>INSERT INTO tbl1(c) (SELECT -a FROM tbl2)</code> may return
+     * multiple features (in this example, one insert and one select).
+     *
+     * @param sql the SQL query or multiple queries separated by a semicolon.
+     * @param username the user who issued the query.
+     * @return a list of query features.
+     * @throws SqlParseException in case of parse errors.
+     * @throws UnsupportedSqlException in case a statement is not supported by
+     * this parser.
+     * @throws SqlSemanticException in case of semantic errors, i.e. a table
+     * that do not exist is referenced.
+     * @throws UnauthorizedSqlException if the user is not authorized to execute
+     * such kind of queries.
+     */
     public List<QueryFeature> parse(String sql, String username) throws SqlParseException, UnsupportedSqlException, SqlSemanticException, UnauthorizedSqlException {
         Name normalizedUsername = new Name(username);
         SqlParser parser = new SqlParser(_dbVendor);
@@ -66,6 +92,18 @@ public class DatabaseEngine implements Serializable {
         return features;
     }
 
+    /**
+     * Parses an SQL statement. This method should be used only to create the
+     * schema and to add the grants, because there is no way to retrieve the
+     * query features. Queries are submitted as a database administrator.
+     *
+     * @param sql the query or the queries separated by a semicolon.
+     * @return the number of statements parsed.
+     * @throws SqlParseException in case of parse errors.
+     * @throws UnsupportedSqlException in case a statement is not supported by
+     * this parser.
+     * @throws SqlSemanticException in case of semantic errors.
+     */
     public int parse(String sql) throws SqlParseException, UnsupportedSqlException, SqlSemanticException {
         SqlParser parser = new SqlParser(_dbVendor);
         int ret = parser.parse(sql);
@@ -242,7 +280,7 @@ public class DatabaseEngine implements Serializable {
     }
 
     /**
-     * Filter the tables used by the query.
+     * Filters the tables used by the query.
      *
      * @param tableNames a list of pairs (table name, table alias).
      * @param additionalTables additional tables to be used to resolve the
@@ -336,11 +374,25 @@ public class DatabaseEngine implements Serializable {
         }
     }
 
+    /**
+     * Gets an immutable collection of tables. Use this method to know the
+     * tables contained in this database representation.
+     *
+     * @return a collection of tables.
+     */
     public Collection<Table> getTables() {
         return Collections.unmodifiableCollection(_tables.values());
     }
 
-    public Table getTable(String name) throws NoSuchElementException {
+    /**
+     * Gets a table by its name.
+     *
+     * @param name the table name.
+     * @return the table or null if there is no table with the given name.
+     * @throws NullPointerException if name is null.
+     * @throws IllegalArgumentException if name is empty.
+     */
+    public Table getTable(String name) {
         return _tables.get(new Name(name));
     }
 }

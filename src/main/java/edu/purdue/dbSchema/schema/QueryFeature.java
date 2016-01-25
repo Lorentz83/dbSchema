@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
+ * Represents a set of features extracted from a query.
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
@@ -62,18 +63,39 @@ public class QueryFeature {
         _roles = Collections.unmodifiableCollection(roles);
     }
 
+    /**
+     * Returns the type of the query.
+     *
+     * @return the type of the query.
+     */
     public DlmQueryType getType() {
         return _type;
     }
 
+    /**
+     * Returns the column used by the query. Which can be either the one
+     * returned, updated or inserted.
+     *
+     * @return the column used by the query.
+     */
     public Collection<AbstractColumn> getUsedCols() {
         return _usedCols;
     }
 
+    /**
+     * Returns the column used to filter the query.
+     *
+     * @return the column used to filter the query.
+     */
     public Collection<AbstractColumn> getFilteredCols() {
         return _filteredCols;
     }
 
+    /**
+     * Returns the roles used to execute the query.
+     *
+     * @return the roles used to execute the query.
+     */
     public Collection<Name> getRoles() {
         return _roles;
     }

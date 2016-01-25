@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.contains;
@@ -342,5 +343,23 @@ public class DatabaseEngineTest {
         assertThat(feature.getRoles(), contains(new Name("user")));
         assertThat(feature.getFilteredCols(), contains(tbl1id, tbl1f));
         assertThat(feature.getUsedCols(), containsInAnyOrder(tbl1id, tbl1f));
+    }
+
+    @Test
+    public void getTable() throws Exception {
+        assertThat(_testDb.getTable("does not exist"), is(nullValue()));
+
+        try {
+            _testDb.getTable("");
+            fail("missing exception");
+        } catch (IllegalArgumentException ex) {
+            assertThat(ex.getMessage(), is("Empty name"));
+        }
+        try {
+            _testDb.getTable(null);
+            fail("missing exception");
+        } catch (NullPointerException ex) {
+            assertThat(ex.getMessage(), is("Missing name"));
+        }
     }
 }

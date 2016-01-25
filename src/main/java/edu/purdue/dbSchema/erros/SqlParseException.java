@@ -1,8 +1,8 @@
 package edu.purdue.dbSchema.erros;
 
 /**
- * Indicates a parser error. Typically thrown when a string cannot be parsed as
- * valid SQL for the specified dialect.
+ * Thrown to signal a parser error. Typically thrown when a string cannot be
+ * parsed as valid SQL for the specified dialect.
  *
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
