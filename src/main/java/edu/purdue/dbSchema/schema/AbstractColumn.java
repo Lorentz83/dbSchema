@@ -3,7 +3,7 @@ package edu.purdue.dbSchema.schema;
 import java.io.Serializable;
 
 /**
- * This abstract class represent a column. In a database there are both actual
+ * This abstract class represents a column. In a database there are both actual
  * columns and virtual columns. The former are container directly related to the
  * table, the latter are projection of actual columns or functions. This class
  * abstracts from this difference.
