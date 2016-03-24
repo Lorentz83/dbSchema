@@ -236,8 +236,8 @@ public class DatabaseEngine implements Serializable {
     protected static int addSelectedColumn(final HashMap<Name, Table> usedTables, final List<StringPair> selectedCols, Collection<AbstractColumn> retVal) throws SqlSemanticException {
         int initialSize = retVal.size();
         for (StringPair select : selectedCols) {
-            String tblName = select.first; //may be empty
-            String colName = select.second;
+            String tblName = select.getFirst(); //may be empty
+            String colName = select.getSecond();
             Table selectedTable;
             AbstractColumn selectedCol = null;
 
@@ -294,12 +294,12 @@ public class DatabaseEngine implements Serializable {
         HashMap<Name, Table> usedTables = new HashMap<>(additionalTables); // we want to copy it to don't change the parent's mapping
         HashSet<Name> tablesWithAlias = new HashSet<>();
         for (StringPair from : tableNames) {
-            if (from.first.isEmpty()) {
+            if (from.getFirst().isEmpty()) {
                 // this is a subquery
                 continue;
             }
-            final Name name = new Name(from.first);
-            final String alias = from.second;
+            final Name name = new Name(from.getFirst());
+            final String alias = from.getSecond();
 
             Table t = _tables.get(name);
             if (t == null) {
