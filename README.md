@@ -5,11 +5,17 @@ dbSchema is a library written in java which can parse sql queries to
 extract a set of features that may be used to implement anomaly
 detection engines.
 
+This project has been started by Lorenzo Bossi during his work at
+Purdue University and was sponsored by the
+[Cyber Center](http://www.purdue.edu/discoverypark/cyber/)
+as part of a bigger project.
+
 ### Dependencies
+
 This project is written in java and must be compiled using JDK 8 and
 maven.
 
-This project depends by the library
+This project depends on the library
 [General Sql Parser v1.6.3.1 for Java](http://www.sqlparser.com/).
 The trial version can be downloaded and installed into the local maven
 repository executing the shell script: ``install_dependencies.sh``
@@ -23,3 +29,6 @@ shell ``mvn package``. The compiled jar file will be generated into
 ``target``.
 
 To create the documentation execute ``mvn javadoc:javadoc``.
+
+You can check the test coverage opening the file
+``target/site/jacoco/index.html``.
