@@ -2,7 +2,9 @@ package edu.purdue.dbSchema.schema;
 
 import edu.purdue.dbSchema.parser.DlmQueryType;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
 import static org.hamcrest.CoreMatchers.is;
@@ -16,6 +18,38 @@ import org.junit.Test;
  * @author Lorenzo Bossi [lbossi@purdue.edu]
  */
 public class QueryFeatureTest {
+
+    @Test
+    public void ctorException() {
+        QueryFeature qf;
+        try {
+            qf = new QueryFeature(null, null, null, null);
+            fail("Missing NullPointerExceptio");
+        } catch (NullPointerException e) {
+        }
+        try {
+            qf = new QueryFeature(DlmQueryType.DELETE, null, null, null);
+            fail("Missing NullPointerExceptio");
+        } catch (NullPointerException e) {
+        }
+        try {
+            qf = new QueryFeature(DlmQueryType.DELETE, Collections.EMPTY_LIST, null, null);
+            fail("Missing NullPointerExceptio");
+        } catch (NullPointerException e) {
+        }
+        try {
+            qf = new QueryFeature(DlmQueryType.DELETE, Collections.EMPTY_LIST, Collections.EMPTY_LIST, null);
+            fail("Missing NullPointerExceptio");
+        } catch (NullPointerException e) {
+        }
+
+        try {
+            qf = new QueryFeature(Collections.EMPTY_LIST);
+            fail("Missing  NoSuchElementException");
+        } catch (NoSuchElementException e) {
+        }
+
+    }
 
     @Test
     public void testImmutableCollections() {

@@ -26,11 +26,11 @@ public class RealColumn extends AbstractColumn {
      */
     RealColumn(Name name, String type, boolean notNull, boolean unique, Table table) throws NullPointerException, IllegalArgumentException {
         super(table, name);
-        if (name == null || type == null) {
+        if (type == null) {
             throw new NullPointerException("name or type");
         }
         if (type.isEmpty()) {
-            throw new IllegalArgumentException("name or type");
+            throw new IllegalArgumentException("empty type");
         }
         _type = type;
         _notNull = notNull;

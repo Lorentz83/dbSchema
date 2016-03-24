@@ -111,8 +111,14 @@ public class Table implements Serializable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE TABLE ").append(_name).append(" (\n");
+        int num = _cols.size();
         for (AbstractColumn col : _cols.values()) {
-            sb.append(col.toString()).append(",\n");
+            sb.append(col.toString());
+            if (--num > 0) {
+                sb.append(",\n");
+            } else {
+                sb.append("\n");
+            }
         }
         sb.append(");");
         return sb.toString();

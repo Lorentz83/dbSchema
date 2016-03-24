@@ -46,6 +46,13 @@ public class NameTest {
     }
 
     @Test
+    public void equals_otherType() {
+        Name n = new Name("name");
+        assertThat(n.equals(null), is(false));
+        assertThat(n.equals("name"), is(false));
+    }
+
+    @Test
     public void equals_ignoreQuotes() {
         Name n1 = new Name("na me");
         Name n2 = new Name("'na me'");
@@ -72,10 +79,29 @@ public class NameTest {
 
     @Test
     public void getter() {
-        String sname = "\"TableName\"";
+        String sname = "TableName";
         Name name = new Name(sname);
 
         assertThat(name.getName(), is("tablename"));
         assertThat(name.getOriginalName(), sameInstance(sname));
     }
+
+    @Test
+    public void normalize_removesQuote() {
+        Name name;
+        name = new Name("'NaMe1'");
+        assertThat(name.getName(), is("name1"));
+        name = new Name("NaMe1'");
+        assertThat(name.getName(), is("name1'"));
+        name = new Name("'NaMe1");
+        assertThat(name.getName(), is("'name1"));
+
+        name = new Name("\"nAmE2\"");
+        assertThat(name.getName(), is("name2"));
+        name = new Name("nAmE2\"");
+        assertThat(name.getName(), is("name2\""));
+        name = new Name("\"nAmE2");
+        assertThat(name.getName(), is("\"name2"));
+    }
+
 }

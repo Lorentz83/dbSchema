@@ -1,6 +1,8 @@
 package edu.purdue.dbSchema.utils;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import mockit.Deencapsulation;
 import mockit.Mocked;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -81,6 +83,19 @@ public class DirectedAcyclicGraphTest {
             fail("missing null pointer exception");
         } catch (NullPointerException ex) {
 
+        }
+    }
+
+    @Test
+    public void emptyIterator() {
+        DirectedAcyclicGraph<String> dag = new DirectedAcyclicGraph<>();
+        Iterator<String> it;
+        it = dag.followNode("").iterator();
+        assertThat(it.hasNext(), is(false));
+        try {
+            it.next();
+            fail("Missing NoSuchElementException");
+        } catch (NoSuchElementException ex) {
         }
     }
 

@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.LogManager;
+import java.util.stream.Collectors;
 
 /**
  * This is a simple test application.
@@ -47,11 +48,6 @@ public class App {
                 db = readDb(dbFileName);
                 in = (args.length < 3) ? System.in : new FileInputStream(args[2]);
                 parseLine(db, in);
-                break;
-            case "--feature":
-                db = readDb(dbFileName);
-                in = (args.length < 3) ? System.in : new FileInputStream(args[2]);
-                parseFeatureLine(db, in);
                 break;
             case "-i":
             case "--info":
@@ -109,40 +105,21 @@ public class App {
         }
     }
 
-    private static void parseFeatureLine(DatabaseEngine db, InputStream in) throws IOException {
-        String line;
-        FeatureFormatter featureFormatter = new FeatureFormatter(db.getTables(), System.out);
-        featureFormatter.header();
-        try (BufferedReader bin = new BufferedReader(new InputStreamReader(in))) {
-            while ((line = bin.readLine()) != null) {
-                String[] split = line.split(":");
-                String role = split[0].trim();
-                String query = split[1].trim().replace("?", "1");
-                try {
-                    List<QueryFeature> features = db.parse(query, username);
-                    for (QueryFeature feature : features) {
-                        featureFormatter.format(feature, role);
-                    }
-                } catch (SqlParseException | UnsupportedSqlException | UnauthorizedSqlException | SqlSemanticException ex) {
-                    System.err.println(" --- Error parsing ---");
-                    System.err.println(query);
-                    ex.printStackTrace(System.err);
-                    System.err.println(" --- end error ---");
-                }
-            }
-        }
-    }
-
     private static void parseLine(DatabaseEngine db, InputStream in) throws IOException {
         String line;
-        FeatureFormatter featureFormatter = new FeatureFormatter(db.getTables(), System.out);
-        featureFormatter.header();
         try (BufferedReader bin = new BufferedReader(new InputStreamReader(in))) {
             while ((line = bin.readLine()) != null) {
                 try {
                     List<QueryFeature> features = db.parse(line, username);
+                    System.out.println(" -- Query -- ");
+                    System.out.println(line);
                     for (QueryFeature feature : features) {
-                        featureFormatter.format(feature, "");
+                        System.out.println(" type: " + feature.getType());
+                        String sCols;
+                        sCols = feature.getUsedCols().stream().map(i -> i.getName().getName()).collect(Collectors.joining(", ", "Used Cols: [", "]"));
+                        System.out.println(sCols);
+                        sCols = feature.getFilteredCols().stream().map(i -> i.getName().getName()).collect(Collectors.joining(", ", "Filtered Cols: [", "]"));
+                        System.out.println(sCols);
                     }
                 } catch (SqlParseException | UnsupportedSqlException | UnauthorizedSqlException | SqlSemanticException ex) {
                     System.err.println(" --- Error parsing ---");

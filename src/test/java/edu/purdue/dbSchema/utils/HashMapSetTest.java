@@ -15,7 +15,20 @@ import org.junit.Test;
 public class HashMapSetTest {
 
     @Test
-    public void putNullArgs() {
+    public void put() {
+        HashMapSet<String, Integer> ms = new HashMapSet<>();
+        try {
+            ms.put(null);
+            fail("missing NullPointerException");
+        } catch (NullPointerException ex) {
+        }
+
+        assertThat(ms.put("a"), is(true));
+        assertThat(ms.put("a"), is(false));
+    }
+
+    @Test
+    public void putPair() {
         HashMapSet<String, Integer> ms = new HashMapSet<>();
 
         try {
@@ -28,7 +41,10 @@ public class HashMapSetTest {
             fail("missing NullPointerException");
         } catch (NullPointerException ex) {
         }
-        ms.put("", 0);
+        assertThat(ms.put("", 0), is(true));
+        assertThat(ms.put("", 0), is(false));
+        assertThat(ms.put("", 1), is(true));
+        assertThat(ms.put("a", 0), is(true));
     }
 
     @Test

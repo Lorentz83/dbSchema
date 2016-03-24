@@ -60,6 +60,15 @@ public class DatabaseEngineTest {
     }
 
     @Test
+    public void ctor() {
+        try {
+            DatabaseEngine db = new DatabaseEngine(null);
+            fail("missing NullPointerException");
+        } catch (NullPointerException npe) {
+        }
+    }
+
+    @Test
     public void filterTablesDuplicatedTable() throws Exception {
         try {
             _select.addFrom("tbl1", "");
@@ -281,6 +290,15 @@ public class DatabaseEngineTest {
             fail("missing exception on circular grant");
         } catch (SqlSemanticException ex) {
 
+        }
+    }
+
+    @Test
+    public void parse_userCannotChangeSchema() throws Exception {
+        try {
+            _testDb.parse("create table t (id integer)", "user1");
+            fail("Missing UnauthorizedSqlException");
+        } catch (UnauthorizedSqlException ex) {
         }
     }
 
