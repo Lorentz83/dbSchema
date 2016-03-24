@@ -63,6 +63,9 @@ public class Grant {
      * empty.
      */
     public Grant(Type type, String to, String table, String column) throws IllegalArgumentException, NullPointerException {
+        if (type == null) {
+            throw new NullPointerException("Null type");
+        }
         _to = new Name(to);
         _role = null;
         if (type == Type.ROLE || to.isEmpty() || table.isEmpty()) {

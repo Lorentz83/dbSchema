@@ -413,4 +413,20 @@ public class DatabaseEngineTest {
         }
 
     }
+
+    @Test
+    public void parse_grantToMissingObjects() throws Exception {
+        try {
+            _testDb.parse("grant select on notbl to usr");
+            fail("missing SqlSemanticException");
+        } catch (SqlSemanticException ex) {
+            assertThat(ex.getMessage(), is("relation 'notbl' does not exist"));
+        }
+        try {
+            _testDb.parse("grant select on tbl1.nocol to usr");
+            fail("missing SqlSemanticException");
+        } catch (SqlSemanticException ex) {
+            assertThat(ex.getMessage(), is("column 'nocol' does not exist in table 'tbl1'"));
+        }
+    }
 }

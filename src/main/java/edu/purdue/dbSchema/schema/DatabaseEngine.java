@@ -325,13 +325,6 @@ public class DatabaseEngine implements Serializable {
         return usedTables;
     }
 
-    protected void evaluateGrantToRole(Grant g) throws UnsupportedSqlException, SqlSemanticException {
-        if (g.getType() != Grant.Type.ROLE) {
-            throw new IllegalArgumentException("not grant to role");
-        }
-        _grants.grantRole(g.getRole(), g.getTo());
-    }
-
     protected void evaluateGrantToTable(Grant grant) throws SqlSemanticException {
         BiConsumer<AbstractColumn, Name> addGrant;
         switch (grant.getType()) {
@@ -369,7 +362,7 @@ public class DatabaseEngine implements Serializable {
 
     protected void evaluateGrant(Grant g) throws UnsupportedSqlException, SqlSemanticException {
         if (g.getType() == Grant.Type.ROLE) {
-            evaluateGrantToRole(g);
+            _grants.grantRole(g.getRole(), g.getTo());
         } else {
             evaluateGrantToTable(g);
         }
