@@ -49,6 +49,17 @@ public class DatabaseEngineTest {
     }
 
     @Test
+    public void parse_cannotDuplicateTables() throws Exception {
+        _testDb.parse("create table t(id integer)");
+        try {
+            _testDb.parse("create table t(id integer)");
+            fail("Missing SqlSemanticException");
+        } catch (SqlSemanticException ex) {
+            assertThat(ex.getMessage(), is("relation 't' already exists"));
+        }
+    }
+
+    @Test
     public void filterTablesMissingTable() throws Exception {
         try {
             _select.addFrom("tblX", "");
@@ -300,6 +311,10 @@ public class DatabaseEngineTest {
             fail("Missing UnauthorizedSqlException");
         } catch (UnauthorizedSqlException ex) {
         }
+        try {
+            _testDb.parse("GRANT SELECT ON tbl1 TO user", "user1");
+        } catch (UnauthorizedSqlException ex) {
+        }
     }
 
     @Test
@@ -379,5 +394,23 @@ public class DatabaseEngineTest {
         } catch (NullPointerException ex) {
             assertThat(ex.getMessage(), is("Missing name"));
         }
+    }
+
+    @Test
+    public void parse_SubqueryNameCollision() throws Exception {
+        try {
+            _testDb.parse("select * from tbl1, (select * from tbl2) as tbl1");
+            fail("missing SqlSemanticException");
+        } catch (SqlSemanticException ex) {
+            assertThat(ex.getMessage(), is("table name 'tbl1' specified more than once"));
+        }
+
+        try {
+            _testDb.parse("select * from (select * from tbl1) as t, (select * from tbl2) as t");
+            fail("missing SqlSemanticException");
+        } catch (SqlSemanticException ex) {
+            assertThat(ex.getMessage(), is("table name 't' specified more than once"));
+        }
+
     }
 }

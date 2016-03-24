@@ -11,6 +11,7 @@ import edu.purdue.dbSchema.parser.SqlParser;
 import edu.purdue.dbSchema.parser.StringPair;
 import edu.purdue.dbSchema.utils.DbGrants;
 import edu.purdue.dbSchema.utils.IDbGrants;
+import edu.purdue.dbSchema.utils.Pair;
 import gudusoft.gsqlparser.EDbVendor;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -145,16 +146,16 @@ public class DatabaseEngine implements Serializable {
         List<QueryFeature> features = new ArrayList<>();
 
         // sub queries
-        for (Map.Entry<String, ParsedQuery> set : parsed.subQueriesFrom.entrySet()) {
-            Name alias = new Name(set.getKey());
-            ParsedQuery sub = set.getValue();
+        for (Pair<String, ParsedQuery> set : parsed.subQueriesFrom) {
+            Name alias = new Name(set.getFirst());
+            ParsedQuery sub = set.getSecond();
             QueryFeature qf = evaluateDlmQuery(sub, userName, usedTables);
             features.add(qf);
 
             Table virtualTable = new Table(alias, qf.getUsedCols());
             for (String virtualCol : sub.virtualColumns.keySet()) {
                 Set<AbstractColumn> mappedTo = new HashSet<>();
-                for (StringPair subCol : sub.virtualColumns.getSet(virtualCol)) {
+                for (StringPair subCol : sub.virtualColumns.getSet(virtualCol)) { //TODO check here
                     addSelectedColumn(usedTables, parsed.whereColumns, mappedTo);
                 }
                 virtualTable.addVirtualColumn(virtualCol, mappedTo);

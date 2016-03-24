@@ -2,10 +2,9 @@ package edu.purdue.dbSchema.parser;
 
 import edu.purdue.dbSchema.utils.HashMapSet;
 import edu.purdue.dbSchema.utils.IMapSet;
+import edu.purdue.dbSchema.utils.Pair;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Contains a Data Manipulation Statements query as returned by the parser. Note
@@ -66,10 +65,10 @@ public class ParsedQuery {
     public List<ParsedQuery> subQueriesSelect = new ArrayList<>();
 
     /**
-     * Contains map of alias to sub queries used in the FROM clause. Empty if no
-     * sub-query exists.
+     * Contains a list of pairs [alias, ParsedQuery] of sub queries used in the
+     * FROM clause. Empty if no sub-query exists.
      */
-    public Map<String, ParsedQuery> subQueriesFrom = new HashMap<>();
+    public List<Pair<String, ParsedQuery>> subQueriesFrom = new ArrayList<>();
 
     /**
      * Contains a list of sub queries in the WHERE clause. Empty if no sub-query

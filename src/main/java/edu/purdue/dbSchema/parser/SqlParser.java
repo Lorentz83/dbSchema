@@ -4,6 +4,7 @@ import edu.purdue.dbSchema.erros.SqlParseException;
 import edu.purdue.dbSchema.erros.SqlSemanticException;
 import edu.purdue.dbSchema.erros.UnsupportedSqlException;
 import edu.purdue.dbSchema.schema.Table;
+import edu.purdue.dbSchema.utils.Pair;
 import gudusoft.gsqlparser.EDbVendor;
 import gudusoft.gsqlparser.EExpressionType;
 import gudusoft.gsqlparser.TBaseType;
@@ -355,7 +356,7 @@ public class SqlParser {
                 break;
             case subquery:
                 tableName = "";
-                query.subQueriesFrom.put(tableAlias, analyzeSelectStmt(table.getSubquery()));
+                query.subQueriesFrom.add(new Pair<String, ParsedQuery>(tableAlias, analyzeSelectStmt(table.getSubquery())));
                 break;
             default:
                 throw new UnsupportedSqlException("unsuppported table '%s' in from clause", table.toString());
