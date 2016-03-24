@@ -284,17 +284,21 @@ public class SqlParser {
                 addColumnsName(resultColumn.getExpr(), query, alias);
             }
 
+            ArrayList<String> usingJoinTables = new ArrayList<String>();
             for (int i = 0; i < pStmt.joins.size(); i++) {
                 TJoin join = pStmt.joins.getJoin(i);
-                addTable(join.getTable(), query);
+                String tableLocalName = addTable(join.getTable(), query);
+                usingJoinTables.add(tableLocalName);
                 switch (join.getKind()) {
                     case TBaseType.join_source_fake:
-                        // nothing to do, this is the first table in the list
+                        // this is the first table in the list
+                        usingJoinTables = new ArrayList<String>();
                         break;
                     case TBaseType.join_source_table:
                         for (int j = 0; j < join.getJoinItems().size(); j++) {
                             TJoinItem joinItem = join.getJoinItems().getJoinItem(j);
-                            addTable(joinItem.getTable(), query);
+                            tableLocalName = addTable(joinItem.getTable(), query);
+                            usingJoinTables.add(tableLocalName);
 
                             if (joinItem.getOnCondition() != null) {
                                 evaluateWhereConditions(joinItem.getOnCondition(), query);
@@ -302,14 +306,16 @@ public class SqlParser {
                                 TObjectNameList colList = joinItem.getUsingColumns();
                                 for (int n = 0; n < colList.size(); n++) {
                                     TObjectName colName = colList.getObjectName(n);
-                                    query.addWhereColumn(colName.getTableString(), colName.getColumnNameOnly());
+                                    for (String table : usingJoinTables) {
+                                        query.addWhereColumn(table, colName.getColumnNameOnly());
+                                    }
                                 }
                             }
                         }
                         break;
                     case TBaseType.join_source_join:
                         //select from another query
-                        throw new UnsupportedSqlException("unsuppported neasted query");
+                        throw new UnsupportedSqlException("unsuppported nested query");
                     default:
                         throw new UnsupportedSqlException("unknown type in join!");
                 }
@@ -346,8 +352,9 @@ public class SqlParser {
      * @throws NullPointerException
      * @throws UnsupportedSqlException
      * @throws IllegalArgumentException
+     * @return the name of the table or its alias if defined
      */
-    private void addTable(TTable table, ParsedQuery query) throws NullPointerException, UnsupportedSqlException, IllegalArgumentException {
+    private String addTable(TTable table, ParsedQuery query) throws NullPointerException, UnsupportedSqlException, IllegalArgumentException {
         String tableAlias = table.getAliasName();
         String tableName;
         switch (table.getTableType()) {
@@ -362,6 +369,7 @@ public class SqlParser {
                 throw new UnsupportedSqlException("unsuppported table '%s' in from clause", table.toString());
         }
         query.addFrom(tableName, tableAlias);
+        return tableAlias.isEmpty() ? tableName : tableAlias;
     }
 
     private void parseWhere(ParsedQuery query, TWhereClause where) throws UnsupportedSqlException {

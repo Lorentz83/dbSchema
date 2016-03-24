@@ -1,5 +1,7 @@
 package edu.purdue.dbSchema.parser;
 
+import edu.purdue.dbSchema.erros.SqlParseException;
+import edu.purdue.dbSchema.erros.UnsupportedSqlException;
 import edu.purdue.dbSchema.schema.Table;
 import edu.purdue.dbSchema.testUtil.SoftEqual;
 import edu.purdue.dbSchema.testUtil.TuneLogger;
@@ -7,6 +9,7 @@ import gudusoft.gsqlparser.EDbVendor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -14,6 +17,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -30,11 +34,53 @@ public class SqlParserTest {
     }
 
     @Test
+    public void ctor_exception() {
+        try {
+            SqlParser p = new SqlParser(null);
+            fail("missing NullPointerException");
+        } catch (NullPointerException ex) {
+        }
+    }
+
+    @Test
+    public void parse_parseError() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        try {
+            p.parse("select * froma table");
+            fail("missing SqlParseException");
+        } catch (SqlParseException ex) {
+            assertThat(ex.getMessage(), containsString("syntax error"));
+        }
+    }
+
+    @Test
     public void parse_emptyStringNoError() throws Exception {
         SqlParser p = new SqlParser(EDbVendor.dbvoracle);
         assertThat(p.parse(""), is(0));
         assertThat(p.parse(" \t"), is(0));
         assertThat(p.parse(" ;  ;"), is(0));
+    }
+
+    @Test
+    public void parse_grantExceptions() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvoracle);
+        try {
+            p.parse("GRANT read ON something");
+            fail("missing SqlParseException");
+        } catch (UnsupportedSqlException ex) {
+        }
+        try {
+            p.parse("GRANT sElEcT ON namespace.table.col TO user");
+            fail("missing SqlParseException");
+        } catch (SqlParseException ex) {
+            assertThat(ex.getMessage(), containsString("the object 'namespace.table.col' is not in the form of 'table.coloumn'"));
+        }
+        try {
+            p.parse("GRANT something ON table TO user");
+            fail("missing SqlParseException");
+        } catch (SqlParseException ex) {
+            assertThat(ex.getMessage(), containsString("Cannot recognize the privilege 'something'"));
+        }
     }
 
     @Test
@@ -108,6 +154,31 @@ public class SqlParserTest {
                 new StringPair("tbl", "c"),
                 new StringPair("", "d"),
                 new StringPair("", "e")));
+    }
+
+    @Test
+    public void parse_joinUsing() throws Exception {
+        SqlParser p;
+        p = new SqlParser(EDbVendor.dbvoracle);
+        p.parse("select * from t0, t1 join t2 using(a,b), t3");
+        ParsedQuery query;
+
+        query = p.getDmlQueries().get(0);
+        assertThat(query.from, hasSize(4));
+        assertThat(query.whereColumns, containsInAnyOrder(
+                new StringPair("t1", "a"),
+                new StringPair("t1", "b"),
+                new StringPair("t2", "a"),
+                new StringPair("t2", "b")
+        ));
+
+        p.parse("select * from v1 join v2 using(a)");
+        query = p.getDmlQueries().get(0);
+        assertThat(query.from, hasSize(2));
+        assertThat(query.whereColumns, containsInAnyOrder(
+                new StringPair("v1", "a"),
+                new StringPair("v2", "a")
+        ));
     }
 
     @Test
@@ -322,6 +393,20 @@ public class SqlParserTest {
         ParsedQuery ret = p.getDmlQueries().get(0);
         assertThat(ret.mainColumns, contains(new StringPair("", "f_id")));
         assertThat(ret.whereColumns, contains(new StringPair("", "f_arrive_time")));
+    }
+
+    @Test
+    public void parse_WhereConditions() throws Exception {
+        SqlParser p = new SqlParser(EDbVendor.dbvpostgresql);
+        p.parse("select * from t1, t2 where f(a)>1 and f(t1.b, t2.c) or d=e");
+        ParsedQuery q = p.getDmlQueries().get(0);
+        assertThat(q.whereColumns, contains(
+                new StringPair("", "a"),
+                new StringPair("t1", "b"),
+                new StringPair("t2", "c"),
+                new StringPair("", "d"),
+                new StringPair("", "e")
+        ));
     }
 
     @Test
