@@ -5,12 +5,27 @@ dbSchema is a library written in java which can parse sql queries to
 extract a set of features that may be used to implement anomaly
 detection engines.
 
-This project has been started by Lorenzo Bossi during his work at
-Purdue University and was sponsored by the
-[Cyber Center](http://www.purdue.edu/discoverypark/cyber/)
-as part of a bigger project.
+This library is released under the MIT license.
 
-### Dependencies
+Features
+--------
+
+Once the schema is imported, this library can resolve the columns to
+the tables they belong.
+For example, given the query:
+```
+SELECT a, b
+FROM t1 JOIN t2
+```
+the schema is required to correctly map the columns `a` and `b` to the
+table they belongs.
+
+If users, roles and grants are provided, this library can return the
+list of roles used to execute the query.
+Roles can be organized in an hierarchical way.
+
+Dependencies
+------------
 
 This project is written in java and must be compiled using JDK 8 and
 maven.
@@ -22,13 +37,21 @@ repository executing the shell script: ``install_dependencies.sh``
 
 All the other dependencies are automatically downloaded by maven.
 
-### Compile
+Compile
+-------
 
 Once the all the dependencies are correctly installed, just type on a
-shell ``mvn package``. The compiled jar file will be generated into
-``target``.
+shell `mvn package`. The compiled jar file will be generated into
+`target`.
 
-To create the documentation execute ``mvn javadoc:javadoc``.
+To create the documentation execute `mvn javadoc:javadoc`.
 
 You can check the test coverage opening the file
-``target/site/jacoco/index.html``.
+`target/site/jacoco/index.html`.
+
+Acknowledgment
+--------------
+
+This library has been written as part of a bigger project developed by
+the research team of Professor Elisa Bertino at the [Department of
+Computer Science of Purdue University](https://www.cs.purdue.edu/).
